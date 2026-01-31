@@ -1,8 +1,8 @@
 // api/consultor.js
-// TESTE RADICAL: Chave direto no código (Apagar logo após o teste!)
+// Versão Final: Modelo 'gemini-pro' (Mais estável) + Chave Segura
 
 module.exports = async (req, res) => {
-  // CORS
+  // Cabeçalhos para o navegador aceitar
   res.setHeader('Access-Control-Allow-Credentials', true);
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST,OPTIONS');
@@ -14,23 +14,26 @@ module.exports = async (req, res) => {
   if (req.method === 'OPTIONS') return res.status(200).end();
 
   try {
-    // ⚠️ COLOCAR A CHAVE AQUI APENAS PARA O TESTE
-    // Exemplo: const apiKey = "AIzaSyA_AgrLnci...";
-    const apiKey = "AIzaSyA_AgrLncivxShnp4S_k_fBXxg-IoyXZ5I"; 
-
-    console.log("--> [TESTE] Usando chave direta (início):", apiKey.substring(0, 5) + "...");
+    // 1. Recupera a chave do cofre (Vercel)
+    const apiKey = process.env.MINHA_CHAVE || process.env.GOOGLE_API_KEY;
+    
+    if (!apiKey) {
+      console.error("--> [ERRO] Chave API não encontrada nas variáveis.");
+      return res.status(500).json({ error: 'Configuração de chave ausente.' });
+    }
 
     const { carteira } = req.body || {};
-    
+
+    // 2. Chama o Google (Modelo alterado para 'gemini-pro')
     const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${apiKey}`,
       {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           contents: [{ 
             parts: [{ 
-              text: `Atue como Consultor ESG. Analise: ${JSON.stringify(carteira || "Carteira Teste")}` 
+              text: `Atue como Consultor ESG. Analise brevemente: ${JSON.stringify(carteira || "Carteira Teste")}` 
             }] 
           }]
         })
@@ -39,10 +42,10 @@ module.exports = async (req, res) => {
 
     const data = await response.json();
 
+    // 3. Verifica se o Google rejeitou
     if (!response.ok) {
       console.error("--> [ERRO GOOGLE]", JSON.stringify(data));
-      // Retorna o erro exato do Google para você ver na tela
-      return res.status(500).json({ error: 'Erro no Google', details: data });
+      return res.status(500).json({ error: 'O Google está instável (503).', details: data });
     }
 
     const texto = data.candidates?.[0]?.content?.parts?.[0]?.text;
