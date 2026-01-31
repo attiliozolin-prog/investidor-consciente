@@ -18,13 +18,14 @@ module.exports = async (req, res) => {
   }
 
   try {
-    console.log("--> [DEBUG] Iniciando...");
+console.log("--> [DEBUG] TENTATIVA FINAL COM MINHA_CHAVE...");
     
     // O GRAMPO: Vamos ver o que tem no cofre (sem mostrar as senhas, só os nomes)
     const chavesVisiveis = Object.keys(process.env);
     console.log("--> [DEBUG] Chaves encontradas no servidor:", JSON.stringify(chavesVisiveis));
 
-    const apiKey = process.env.GOOGLE_API_KEY;
+// Tentamos ler a chave nova (MINHA_CHAVE) ou a antiga por segurança
+const apiKey = process.env.MINHA_CHAVE || process.env.GOOGLE_API_KEY;
     
     // Verificação extra de limpeza
     if (!apiKey || apiKey.trim() === "") {
