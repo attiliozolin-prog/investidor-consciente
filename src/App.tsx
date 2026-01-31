@@ -55,6 +55,9 @@ import {
   PolarRadiusAxis,
 } from "recharts";
 
+// --- IMPORTAÇÃO DA NOVA INTELIGÊNCIA ARTIFICIAL ---
+import { IA } from './IA'; 
+
 // ==========================================
 // 1. TYPES & INTERFACES
 // ==========================================
@@ -405,24 +408,18 @@ const MOCK_NEWS = [
 // 3. HELPER COMPONENTS
 // ==========================================
 
-// O LOGO DEFINITIVO (Gráfico Abstrato de Crescimento)
 const LogoIcon = ({ className }: { className?: string }) => (
   <svg
     viewBox="0 0 48 48"
     fill="none"
     xmlns="http://www.w3.org/2000/svg"
     className={className}
-    // Adiciona uma sombra suave para dar profundidade
     style={{ filter: "drop-shadow(0px 2px 4px rgba(5, 150, 105, 0.2))" }}
   >
-    {/* Fundo Verde Arredondado */}
     <rect width="48" height="48" rx="12" fill="#059669" />
-
-    {/* Desenho Abstrato (Barras de Crescimento) */}
     <path
       fillRule="evenodd"
       clipRule="evenodd"
-      // Este caminho desenha 3 barras subindo
       d="M11 36V24H17V36H11ZM21 36V16H27V36H21ZM31 36V8H37V36H31Z"
       fill="white"
     />
@@ -1180,9 +1177,6 @@ const LoginScreen: React.FC<{ onLogin: () => void }> = ({ onLogin }) => {
 // ==========================================
 // 5. MAIN TAB COMPONENTS
 // ==========================================
-// ==========================================
-// 5. COMPONENTE HOMETAB (CORRIGIDO)
-// ==========================================
 
 const HomeTab: React.FC<any> = ({
   userProfile,
@@ -1217,7 +1211,7 @@ const HomeTab: React.FC<any> = ({
     return Math.round(weightedScoreSum / totalBalance);
   }, [holdings, rankedStocks, totalBalance]);
 
-  // 3. CÉREBRO DA ESTRATÉGIA (AQUI ESTAVA O ERRO)
+  // 3. CÉREBRO DA ESTRATÉGIA
   const rebalancingStrategy = useMemo(() => {
     // A. Metas do Perfil
     const target = { fixed_income: 0.3, fii: 0.4, stock: 0.3 };
@@ -1231,8 +1225,7 @@ const HomeTab: React.FC<any> = ({
       target.stock = 0.5;
     }
 
-    // B. CORREÇÃO: Somar a lista manualmente para saber quanto temos de cada tipo
-    // Antes o código tentava ler "holdings.fixed_income", mas holdings é uma lista.
+    // B. Somar a lista manualmente para saber quanto temos de cada tipo
     const currentSums = { fixed_income: 0, fii: 0, stock: 0, total: 0 };
 
     holdings.forEach((h: any) => {
@@ -1356,6 +1349,10 @@ const HomeTab: React.FC<any> = ({
         </div>
       </div>
 
+      {/* --- BOTÃO IA (Consultor) --- */}
+      {/* Aqui é a mágica: Ele só aparece se tiver saldo para analisar */}
+      {totalBalance > 0 && <IA carteira={holdings} />}
+
       {/* CARD DE COERÊNCIA GAMIFICADO (A PLANTA) */}
       {totalBalance > 0 && (
         <div className="bg-white border border-gray-100 rounded-3xl p-6 shadow-sm relative overflow-hidden">
@@ -1431,7 +1428,7 @@ const HomeTab: React.FC<any> = ({
         </div>
       )}
 
-      {/* ESTRATÉGIA DO MÊS (CORRIGIDA) */}
+      {/* ESTRATÉGIA DO MÊS */}
       <div className="bg-white border border-gray-100 rounded-3xl p-6 shadow-sm">
         <div className="flex items-center gap-2 mb-4">
           <Target className="text-emerald-500" size={20} />
