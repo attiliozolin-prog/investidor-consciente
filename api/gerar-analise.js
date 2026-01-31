@@ -1,4 +1,5 @@
 // api/gerar-analise.js
+// FORÇANDO ATUALIZAÇÃO DAS VARIÁVEIS DE AMBIENTE (Vercel)
 // Versão DEBUG: Lista quais chaves o servidor consegue ver
 
 module.exports = async (req, res) => {
