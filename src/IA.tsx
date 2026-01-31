@@ -10,7 +10,7 @@ export function IA({ carteira }: { carteira: any }) {
     setAnalise(''); // Limpa a análise anterior
 
     try {
-      const resposta = await fetch('/api/gerar-analise', {
+const resposta = await fetch('/api/consultor', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
