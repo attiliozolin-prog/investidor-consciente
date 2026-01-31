@@ -1,8 +1,8 @@
 // api/gerar-analise.js
-// Versão usando HTTP Puro (Sem bibliotecas externas) para evitar erros de versão
+// Versão Blindada (CommonJS) com Logs de Depuração
 
-export default async function handler(req, res) {
-  // 1. Configurar cabeçalhos para evitar erros de CORS (bloqueio de navegador)
+module.exports = async (req, res) => {
+  // 1. Configurar CORS (Para o navegador aceitar a resposta)
   res.setHeader('Access-Control-Allow-Credentials', true);
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT');
@@ -11,48 +11,41 @@ export default async function handler(req, res) {
     'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version'
   );
 
-  // 2. Responder ao "sinal de fumaça" do navegador (OPTIONS)
+  // 2. Responder rápido se for só uma verificação do navegador
   if (req.method === 'OPTIONS') {
     res.status(200).end();
     return;
   }
 
-  // 3. Validar se é POST
-  if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Método não permitido. Use POST.' });
-  }
-
   try {
-    const { carteira } = req.body;
-    const apiKey = process.env.GOOGLE_API_KEY;
+    console.log("--> Iniciando função serverless...");
 
+    // 3. Verificar a Chave
+    const apiKey = process.env.GOOGLE_API_KEY;
     if (!apiKey) {
-      throw new Error('Chave de API não configurada no servidor (Vercel).');
+      console.error("ERRO FATAL: GOOGLE_API_KEY não encontrada.");
+      return res.status(500).json({ error: 'Chave de API não configurada.' });
     }
 
-    // 4. Montar o Prompt
-    const prompt = `
-      Atue como um Consultor Financeiro ESG Sênior.
-      Analise esta carteira de investimentos: ${JSON.stringify(carteira)}.
-      Foque em:
-      1. Diversificação (Risco).
-      2. Pontuação ESG (Sustentabilidade).
-      3. Sugira 1 mudança prática para melhorar o impacto positivo.
-      Seja direto, curto e encorajador. Use emojis.
-    `;
+    // 4. Pegar os dados
+    const { carteira } = req.body || {};
+    if (!carteira) {
+      return res.status(400).json({ error: 'Nenhuma carteira recebida.' });
+    }
 
-    // 5. CHAMADA DIRETA AO GOOGLE (Sem biblioteca)
-    // Isso evita o erro de "require vs import"
+    console.log("--> Enviando dados para o Google...");
+
+    // 5. Chamada FETCH Nativa
     const response = await fetch(
       `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
       {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          contents: [{
-            parts: [{ text: prompt }]
+          contents: [{ 
+            parts: [{ 
+              text: `Atue como Consultor ESG. Analise esta carteira, seja breve e use emojis: ${JSON.stringify(carteira)}` 
+            }] 
           }]
         })
       }
@@ -60,22 +53,26 @@ export default async function handler(req, res) {
 
     const data = await response.json();
 
-    // 6. Tratamento de Erros do Google
     if (!response.ok) {
-      console.error("Erro do Google:", data);
-      throw new Error(data.error?.message || 'Erro ao contatar o Google Gemini');
+      console.error("--> Erro retornado pelo Google:", JSON.stringify(data));
+      return res.status(500).json({ error: 'O Google recusou o pedido.', details: data });
     }
 
-    // 7. Extrair o texto da resposta
-    const textoResposta = data.candidates[0].content.parts[0].text;
+    // 6. Extrair resposta
+    const texto = data.candidates?.[0]?.content?.parts?.[0]?.text;
+    if (!texto) {
+       console.error("--> Google respondeu, mas sem texto:", JSON.stringify(data));
+       return res.status(500).json({ error: 'Resposta vazia da IA.' });
+    }
 
-    return res.status(200).json({ resultado: textoResposta });
+    console.log("--> Sucesso! Enviando resposta ao site.");
+    return res.status(200).json({ resultado: texto });
 
   } catch (error) {
-    console.error("Erro Geral na API:", error);
+    console.error("--> ERRO CRÍTICO DE EXECUÇÃO:", error);
     return res.status(500).json({ 
-      error: "Erro interno no servidor.", 
-      detalhes: error.message 
+      error: 'Erro interno no servidor Vercel.', 
+      message: error.message 
     });
   }
-}
+};
