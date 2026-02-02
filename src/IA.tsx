@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import ReactMarkdown from 'react-markdown';
 
 // Aceita a carteira atual como "propriedade" para analisar
 export function IA({ carteira }: { carteira: any }) {
@@ -7,10 +8,10 @@ export function IA({ carteira }: { carteira: any }) {
 
   async function chamarInteligencia() {
     setLoading(true);
-    setAnalise(''); // Limpa a análise anterior
+    setAnalise('');
 
     try {
-const resposta = await fetch('/api/consultor', {
+      const resposta = await fetch('/api/consultor', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -19,14 +20,15 @@ const resposta = await fetch('/api/consultor', {
       });
 
       const dados = await resposta.json();
+
       if (dados.resultado) {
         setAnalise(dados.resultado);
       } else {
-        setAnalise("Ops! A IA não conseguiu responder agora.");
+        setAnalise('Ops! A IA não conseguiu responder agora.');
       }
     } catch (erro) {
       console.error(erro);
-      setAnalise("Erro de conexão com o cérebro digital.");
+      setAnalise('Erro de conexão com o cérebro digital.');
     } finally {
       setLoading(false);
     }
@@ -39,7 +41,7 @@ const resposta = await fetch('/api/consultor', {
           🤖 Consultor IA
         </h3>
         <span className="text-xs bg-green-900 text-green-300 px-2 py-1 rounded-full border border-green-700">
-          Gemini Flash Ativado
+          IA Ativada
         </span>
       </div>
 
@@ -58,9 +60,25 @@ const resposta = await fetch('/api/consultor', {
       >
         {loading ? (
           <span className="flex items-center justify-center gap-2">
-            <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            <svg
+              className="animate-spin h-5 w-5 text-white"
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+            >
+              <circle
+                className="opacity-25"
+                cx="12"
+                cy="12"
+                r="10"
+                stroke="currentColor"
+                strokeWidth="4"
+              ></circle>
+              <path
+                className="opacity-75"
+                fill="currentColor"
+                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+              ></path>
             </svg>
             Analisando Investimentos...
           </span>
@@ -71,8 +89,10 @@ const resposta = await fetch('/api/consultor', {
 
       {analise && (
         <div className="mt-6 p-4 bg-slate-900/50 rounded-lg border border-slate-700">
-          <div className="prose prose-invert max-w-none text-slate-300 whitespace-pre-wrap leading-relaxed">
-            {analise}
+          <div className="prose prose-invert max-w-none">
+            <ReactMarkdown>
+              {analise}
+            </ReactMarkdown>
           </div>
         </div>
       )}
