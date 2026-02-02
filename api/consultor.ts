@@ -14,37 +14,42 @@ export default async function handler(
   }
 
   try {
-    // 🔑 1. RECUPERA A CHAVE DA VERCEL
-    const apiKey = process.env.GOOGLE_API_KEY?.trim();
+    // 🔑 1. CHAVE DA OPENAI
+    const apiKey = process.env.OPENAI_API_KEY;
 
     if (!apiKey) {
-      console.error('❌ GOOGLE_API_KEY não encontrada');
+      console.error('❌ OPENAI_API_KEY não encontrada');
       return res.status(500).json({
-        error: 'Chave da API do Google não configurada',
+        error: 'Chave da OpenAI não configurada',
       });
     }
 
-    // 📦 2. DADOS ENVIADOS PELO FRONT
+    // 📦 2. DADOS DO FRONT
     const { carteira } = req.body || {};
 
-    // 🤖 3. CHAMADA AO GEMINI (URL CORRETA + TEMPLATE STRING)
+    // 🤖 3. CHAMADA À OPENAI
     const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.0-pro:generateContent?key=${apiKey}`,
+      'https://api.openai.com/v1/chat/completions',
       {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          Authorization: `Bearer ${apiKey}`,
         },
         body: JSON.stringify({
-          contents: [
+          model: 'gpt-4o-mini',
+          temperature: 0.4,
+          messages: [
             {
-              parts: [
-                {
-                  text: `Atue como Consultor ESG Sênior. Seja direto, use emojis e foque em sustentabilidade. Analise esta carteira:\n\n${JSON.stringify(
-                    carteira || 'Carteira vazia'
-                  )}`,
-                },
-              ],
+              role: 'system',
+              content:
+                'Você é um consultor sênior de investimentos com foco em ESG, sustentabilidade e educação financeira. Seja direto, didático e use emojis com moderação.',
+            },
+            {
+              role: 'user',
+              content: `Analise esta carteira de investimentos e aponte riscos, oportunidades e alinhamento ESG:\n\n${JSON.stringify(
+                carteira || 'Carteira vazia'
+              )}`,
             },
           ],
         }),
@@ -53,18 +58,18 @@ export default async function handler(
 
     const data = await response.json();
 
-    // ❌ 4. ERRO DO GOOGLE
+    // ❌ 4. ERRO DA OPENAI
     if (!response.ok) {
-      console.error('❌ Erro do Google:', data);
+      console.error('❌ Erro OpenAI:', data);
       return res.status(response.status).json({
-        error: 'Erro ao consultar o Gemini',
+        error: 'Erro ao consultar a OpenAI',
         details: data,
       });
     }
 
     // ✅ 5. SUCESSO
     const texto =
-      data?.candidates?.[0]?.content?.parts?.[0]?.text ||
+      data?.choices?.[0]?.message?.content ||
       'Nenhuma resposta gerada.';
 
     return res.status(200).json({ resultado: texto });
