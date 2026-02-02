@@ -27,12 +27,14 @@ export default async function handler(
     // 📦 2. DADOS ENVIADOS PELO FRONT
     const { carteira } = req.body || {};
 
-    // 🤖 3. CHAMADA AO GEMINI
+    // 🤖 3. CHAMADA AO GEMINI (URL CORRETA + TEMPLATE STRING)
     const response = await fetch(
-https://generativelanguage.googleapis.com/v1beta/models/gemini-1.0-pro:generateContent?key=${apiKey}
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.0-pro:generateContent?key=${apiKey}`,
       {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+        },
         body: JSON.stringify({
           contents: [
             {
