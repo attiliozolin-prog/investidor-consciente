@@ -73,12 +73,12 @@ export function IA({ carteira }: { carteira: any }) {
                 r="10"
                 stroke="currentColor"
                 strokeWidth="4"
-              ></circle>
+              />
               <path
                 className="opacity-75"
                 fill="currentColor"
                 d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-              ></path>
+              />
             </svg>
             Analisando Investimentos...
           </span>
@@ -88,8 +88,17 @@ export function IA({ carteira }: { carteira: any }) {
       </button>
 
       {analise && (
-        <div className="mt-6 p-4 bg-slate-900/50 rounded-lg border border-slate-700">
-          <div className="prose prose-invert max-w-none">
+        <div className="mt-6 p-5 bg-slate-800 rounded-lg border border-slate-700">
+          <div className="
+            prose 
+            prose-invert 
+            max-w-none
+            text-slate-200
+            prose-headings:text-white
+            prose-strong:text-white
+            prose-li:text-slate-200
+            prose-p:text-slate-200
+          ">
             <ReactMarkdown>
               {analise}
             </ReactMarkdown>
