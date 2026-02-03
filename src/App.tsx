@@ -53,7 +53,7 @@ import {
   PolarGrid,
   PolarAngleAxis,
   PolarRadiusAxis,
-} from "recharts",
+} from "recharts";
 import Onboarding from "./components/onboarding";
 
 // --- IMPORTAÇÃO DA NOVA INTELIGÊNCIA ARTIFICIAL ---
