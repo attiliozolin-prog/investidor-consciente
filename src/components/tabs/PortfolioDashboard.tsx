@@ -1,3 +1,4 @@
+import React, { useState, useMemo, useRef } from "react";
 const PortfolioDashboard: React.FC<any> = ({
   userProfile,
   transactions,
@@ -498,4 +499,6 @@ const PortfolioDashboard: React.FC<any> = ({
     </div>
   );
 };
+
+export default PortfolioDashboard;
 
