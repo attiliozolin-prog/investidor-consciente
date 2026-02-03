@@ -1765,12 +1765,13 @@ export default function App() {
         </button>
       </nav>
 
-      {isAddModalOpen && (
-        <AddTransactionModal
-          onClose={() => setIsAddModalOpen(false)}
-          onSave={handleAddTransaction}
-        />
-      )}
+{isAddModalOpen && (
+  <AddTransactionModal
+    stocks={STOCKS_DB}
+    onClose={() => setIsAddModalOpen(false)}
+    onSave={handleAddTransaction}
+  />
+)}
       {selectedStockTicker && (
         <StockModal
           stock={rankedStocks.find((s) => s.ticker === selectedStockTicker)!}
