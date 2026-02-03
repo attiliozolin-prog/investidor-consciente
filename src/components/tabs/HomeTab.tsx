@@ -1,4 +1,3 @@
-import { Transaction, Holding } from "./domain/portfolio/types";
 import React, { useMemo } from "react";
 import {
   Eye,
@@ -15,6 +14,7 @@ import {
   ExternalLink,
 } from "lucide-react";
 
+import { Transaction, Holding } from "./domain/portfolio/types";
 import { IA } from "../../IA";
 
 /* =======================
