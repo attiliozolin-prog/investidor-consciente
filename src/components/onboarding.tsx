@@ -7,7 +7,11 @@ import {
 } from "../types";
 
 interface Props {
-  onComplete: (profile: UserProfile & { experienceLevel: "beginner" | "experienced" }) => void;
+  onComplete: (
+    profile: UserProfile & {
+      experienceLevel: "beginner" | "experienced";
+    }
+  ) => void;
 }
 
 export default function Onboarding({ onComplete }: Props) {
@@ -48,17 +52,21 @@ export default function Onboarding({ onComplete }: Props) {
             <h1 className="text-3xl font-bold text-gray-900">
               Bem-vindo ao Investidor Consciente
             </h1>
+
             <p className="text-gray-600 leading-relaxed">
-              Aqui você não investe diretamente.
+              Este não é um aplicativo para comprar ou vender investimentos.
               <br />
-              <strong>Você aprende, acompanha e recebe orientações</strong> para
-              tomar decisões melhores com seu próprio dinheiro.
+              Aqui você <strong>organiza sua carteira</strong>, entende seus
+              riscos e recebe <strong>orientações inteligentes</strong> para
+              decidir melhor.
             </p>
+
             <p className="text-sm text-gray-500">
-              Pense neste app como um{" "}
-              <strong>consultor de bolso</strong>, que usa dados e IA para te
-              ajudar a montar e cuidar da sua carteira.
+              Pense nele como um <strong>consultor de bolso</strong>: simples,
+              acessível e sempre disponível para te ajudar a cuidar do seu
+              dinheiro.
             </p>
+
             <button
               onClick={next}
               className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-4 rounded-xl flex items-center justify-center gap-2"
@@ -72,8 +80,12 @@ export default function Onboarding({ onComplete }: Props) {
         {step === 2 && (
           <div className="space-y-6 animate-in fade-in">
             <h2 className="text-2xl font-bold text-gray-900">
-              Qual é o seu nível com investimentos?
+              Qual é a sua experiência com investimentos?
             </h2>
+
+            <p className="text-sm text-gray-500">
+              Isso nos ajuda a ajustar a linguagem, os avisos e os insights.
+            </p>
 
             <button
               onClick={() => {
@@ -84,7 +96,7 @@ export default function Onboarding({ onComplete }: Props) {
             >
               <div className="font-bold">Sou iniciante</div>
               <div className="text-sm text-gray-500">
-                Nunca investi ou estou começando agora
+                Nunca investi ou estou dando os primeiros passos
               </div>
             </button>
 
@@ -95,9 +107,9 @@ export default function Onboarding({ onComplete }: Props) {
               }}
               className="w-full p-5 rounded-2xl border hover:border-emerald-300 hover:bg-emerald-50 text-left transition-all"
             >
-              <div className="font-bold">Já invisto</div>
+              <div className="font-bold">Já tenho experiência</div>
               <div className="text-sm text-gray-500">
-                Quero monitorar, rebalancear e ter insights
+                Quero acompanhar, rebalancear e receber análises
               </div>
             </button>
           </div>
@@ -107,8 +119,12 @@ export default function Onboarding({ onComplete }: Props) {
         {step === 3 && (
           <div className="space-y-6 animate-in fade-in">
             <h2 className="text-2xl font-bold text-gray-900">
-              Qual é seu principal objetivo?
+              Qual é o seu principal objetivo?
             </h2>
+
+            <p className="text-sm text-gray-500">
+              Não é algo definitivo — você poderá mudar isso depois.
+            </p>
 
             {Object.values(InvestmentGoal).map((goal) => (
               <button
@@ -129,8 +145,12 @@ export default function Onboarding({ onComplete }: Props) {
         {step === 4 && (
           <div className="space-y-6 animate-in fade-in">
             <h2 className="text-2xl font-bold text-gray-900">
-              Como você lida com riscos?
+              Como você se sente em relação a riscos?
             </h2>
+
+            <p className="text-sm text-gray-500">
+              Toda carteira oscila. A diferença está em quanto isso te incomoda.
+            </p>
 
             <button
               onClick={() => {
@@ -143,7 +163,7 @@ export default function Onboarding({ onComplete }: Props) {
               <div>
                 <div className="font-bold">Prefiro segurança</div>
                 <div className="text-sm text-gray-500">
-                  Menos risco, mais previsibilidade
+                  Menos oscilações, mais previsibilidade
                 </div>
               </div>
             </button>
@@ -159,7 +179,7 @@ export default function Onboarding({ onComplete }: Props) {
               <div>
                 <div className="font-bold">Equilíbrio</div>
                 <div className="text-sm text-gray-500">
-                  Um pouco de risco, um pouco de segurança
+                  Um pouco de risco, um pouco de estabilidade
                 </div>
               </div>
             </button>
@@ -175,7 +195,7 @@ export default function Onboarding({ onComplete }: Props) {
               <div>
                 <div className="font-bold">Busco mais retorno</div>
                 <div className="text-sm text-gray-500">
-                  Aceito oscilações no caminho
+                  Aceito oscilações no curto prazo
                 </div>
               </div>
             </button>
@@ -186,19 +206,24 @@ export default function Onboarding({ onComplete }: Props) {
         {step === 5 && (
           <div className="space-y-6 animate-in fade-in">
             <h2 className="text-2xl font-bold text-gray-900">
-              Além de retorno financeiro
+              Além do retorno financeiro
             </h2>
 
             <p className="text-gray-600 text-sm leading-relaxed">
-              Algumas pessoas preferem investir apenas no que dá mais lucro.
+              Algumas pessoas investem apenas pensando em lucro.
               <br />
-              Outras também se preocupam com impacto ambiental, social e ética
-              das empresas.
+              Outras também consideram como as empresas atuam no meio ambiente,
+              na sociedade e na forma como são administradas.
+            </p>
+
+            <p className="text-xs text-gray-500">
+              Você não precisa dominar esse tema. Basta indicar o que faz mais
+              sentido para você.
             </p>
 
             <div className="bg-gray-50 p-6 rounded-2xl space-y-4">
               <div className="flex justify-between text-sm font-semibold text-gray-500">
-                <span>Só lucro</span>
+                <span>Foco em retorno</span>
                 <span>Impacto positivo</span>
               </div>
               <input
