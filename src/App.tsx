@@ -56,6 +56,7 @@ import {
 } from "recharts";
 import Onboarding from "./components/onboarding";
 import Tooltip from "./components/common/Tooltip";
+import MetricBox from "./components/common/MetricBox";
 
 // --- IMPORTAÇÃO DA NOVA INTELIGÊNCIA ARTIFICIAL ---
 import { IA } from './IA'; 
