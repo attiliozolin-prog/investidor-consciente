@@ -53,7 +53,8 @@ import {
   PolarGrid,
   PolarAngleAxis,
   PolarRadiusAxis,
-} from "recharts";
+} from "recharts",
+import Onboarding from "./components/onboarding";
 
 // --- IMPORTAÇÃO DA NOVA INTELIGÊNCIA ARTIFICIAL ---
 import { IA } from './IA'; 
@@ -979,112 +980,6 @@ const TransactionHistoryModal: React.FC<{
   );
 };
 
-const Onboarding: React.FC<{ onComplete: (p: UserProfile) => void }> = ({
-  onComplete,
-}) => {
-  const [step, setStep] = useState(1);
-  const [profile, setProfile] = useState<UserProfile>({
-    name: "",
-    goal: null,
-    esgImportance: 0.5,
-    riskProfile: null,
-    isOnboardingComplete: false,
-  });
-  const handleNext = () => setStep((s) => s + 1);
-
-  const renderStep1 = () => (
-    <div className="space-y-6 animate-in slide-in-from-right fade-in duration-500">
-      <h2 className="text-3xl font-bold text-gray-900">
-        Qual seu principal objetivo?
-      </h2>
-      <div className="grid gap-4">
-        {Object.values(InvestmentGoal).map((goal) => (
-          <button
-            key={goal}
-            onClick={() => {
-              setProfile({ ...profile, goal });
-              handleNext();
-            }}
-            className="flex items-center justify-between p-5 text-left bg-white border-2 border-transparent hover:border-emerald-200 hover:shadow-lg rounded-2xl transition-all group"
-          >
-            <span className="font-semibold text-gray-700 group-hover:text-emerald-700">
-              {goal}
-            </span>
-            <ArrowRight
-              className="text-gray-300 group-hover:text-emerald-500"
-              size={20}
-            />
-          </button>
-        ))}
-      </div>
-    </div>
-  );
-  const renderStep2 = () => (
-    <div className="space-y-8 animate-in slide-in-from-right fade-in duration-500">
-      <div>
-        <h2 className="text-3xl font-bold text-gray-900 mb-2">
-          O Fator "Consciência"
-        </h2>
-        <p className="text-gray-500 leading-relaxed">
-          Defina o equilíbrio da sua carteira. O que é prioridade para você:{" "}
-          <strong>potencial máximo de lucro</strong> ou investimentos com{" "}
-          <strong>alta responsabilidade social e ambiental (ESG)</strong>?
-        </p>
-      </div>
-
-      <div className="bg-white p-8 rounded-3xl shadow-sm border border-gray-100">
-        <div className="flex justify-between mb-4 text-sm font-semibold text-gray-500">
-          <span>💰 Apenas Lucro</span>
-          <span>🌍 Impacto Positivo</span>
-        </div>
-        <input
-          type="range"
-          min="0"
-          max="1"
-          step="0.1"
-          value={profile.esgImportance}
-          onChange={(e) =>
-            setProfile({
-              ...profile,
-              esgImportance: parseFloat(e.target.value),
-            })
-          }
-          className="w-full h-3 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-emerald-600"
-        />
-        <div className="mt-6 text-center">
-          <span className="inline-block px-4 py-2 bg-emerald-100 text-emerald-800 rounded-xl text-sm font-bold shadow-sm">
-            {profile.esgImportance < 0.3
-              ? "Foco Total em Rentabilidade"
-              : profile.esgImportance > 0.7
-              ? "Prioridade Total em ESG"
-              : "Equilíbrio Inteligente"}
-          </span>
-          <p className="text-xs text-gray-400 mt-2">
-            A IA usará isso para filtrar as sugestões.
-          </p>
-        </div>
-      </div>
-      <button
-        onClick={handleNext}
-        className="w-full py-4 bg-gray-900 text-white rounded-xl font-semibold hover:bg-black transition-colors shadow-lg"
-      >
-        Continuar
-      </button>
-    </div>
-  );
-  const renderStep3 = () => (
-    <div className="space-y-6 animate-in slide-in-from-right fade-in duration-500">
-      <h2 className="text-3xl font-bold text-gray-900">Risco x Retorno</h2>
-      <div className="grid gap-4">
-        {Object.values(RiskProfile).map((risk) => (
-          <button
-            key={risk}
-            onClick={() => {
-              const p = {
-                ...profile,
-                riskProfile: risk,
-                isOnboardingComplete: true,
-              };
               setProfile(p);
               onComplete(p);
             }}
