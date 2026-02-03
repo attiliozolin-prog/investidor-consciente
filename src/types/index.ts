@@ -27,12 +27,17 @@ export enum RiskProfile {
 export interface UserProfile {
   name: string;
   goal: InvestmentGoal | null;
-  esgImportance: number; // 0.0 a 1.0
+
+  // Peso de importância ESG (0.0 a 1.0)
+  esgImportance: number;
+
   riskProfile: RiskProfile | null;
+
+  // Define se o onboarding já foi concluído
   isOnboardingComplete: boolean;
 
-  // Informação importante para o futuro
-  experienceLevel?: "iniciante" | "intermediario" | "experiente";
+  // Nível de experiência do usuário com investimentos
+  experienceLevel?: "iniciante" | "intermediario" | "avancado";
 }
 
 // --------------------------------
@@ -51,7 +56,7 @@ export interface StockData {
 
   price: number;
 
-  // Métricas
+  // Métricas principais
   financialScore: number; // 0-100
   esgScore: number; // 0-100
   dividendYield: number;
