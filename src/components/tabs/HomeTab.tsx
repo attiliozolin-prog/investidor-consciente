@@ -1,3 +1,22 @@
+import React, { useMemo } from "react";
+import {
+  Eye,
+  EyeOff,
+  TrendingUp,
+  TrendingDown,
+  Plus,
+  Leaf,
+  Sprout,
+  TreeDeciduous,
+  Target,
+  AlertTriangle,
+  Newspaper,
+  ExternalLink,
+} from "lucide-react";
+
+import { IA } from "../../IA";
+import MetricBox from "../common/MetricBox";
+
 const HomeTab: React.FC<any> = ({
   userProfile,
   onAddTransaction,
