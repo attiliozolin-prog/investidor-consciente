@@ -841,6 +841,7 @@ const TransactionHistoryModal: React.FC<{
   const sortedTransactions = [...transactions].sort(
     (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
   );
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/60 backdrop-blur-sm animate-in fade-in">
       <div className="bg-white rounded-3xl w-full max-w-md h-[80vh] flex flex-col shadow-2xl overflow-hidden">
@@ -853,6 +854,7 @@ const TransactionHistoryModal: React.FC<{
             <X size={20} className="text-gray-500" />
           </button>
         </div>
+
         <div className="flex-1 overflow-y-auto p-4 space-y-3">
           {sortedTransactions.length === 0 ? (
             <p className="text-center text-gray-400 mt-10">
@@ -878,6 +880,7 @@ const TransactionHistoryModal: React.FC<{
                       <ArrowUpRight size={18} />
                     )}
                   </div>
+
                   <div>
                     <div className="font-bold text-gray-900">{t.ticker}</div>
                     <div className="text-xs text-gray-500">
@@ -886,6 +889,7 @@ const TransactionHistoryModal: React.FC<{
                     </div>
                   </div>
                 </div>
+
                 <div className="text-right flex items-center gap-4">
                   <div>
                     <div className="font-bold text-gray-900">
@@ -895,6 +899,7 @@ const TransactionHistoryModal: React.FC<{
                       {t.quantity} x {t.price.toFixed(2)}
                     </div>
                   </div>
+
                   <button
                     onClick={() => {
                       if (confirm("Excluir?")) onDelete(t.id);
@@ -908,56 +913,6 @@ const TransactionHistoryModal: React.FC<{
             ))
           )}
         </div>
-      </div>
-    </div>
-  );
-};
-const LoginScreen: React.FC<{ onLogin: () => void }> = ({ onLogin }) => {
-  const [isLoading, setIsLoading] = useState(false);
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsLoading(true);
-    setTimeout(() => {
-      setIsLoading(false);
-      onLogin();
-    }, 800);
-  };
-  return (
-    <div className="min-h-screen bg-[#F9FAFB] flex flex-col items-center justify-center p-6 relative overflow-hidden">
-      <div className="w-full max-w-sm bg-white p-8 rounded-3xl shadow-xl relative z-10 animate-in fade-in slide-in-from-bottom-4 duration-700">
-        <div className="flex flex-col items-center mb-8">
-          <div className="mb-4">
-            <LogoIcon className="w-16 h-16 text-[#059669]" />
-          </div>
-          <h1 className="text-2xl font-bold text-[#1F2937] tracking-tight text-center">
-            Investidor Consciente
-          </h1>
-        </div>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <input
-            type="email"
-            className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl outline-none"
-            placeholder="seu@email.com"
-          />
-          <input
-            type="password"
-            className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl outline-none"
-            placeholder="••••••••"
-          />
-          <button
-            type="submit"
-            disabled={isLoading}
-            className="w-full mt-4 bg-[#059669] hover:bg-[#047857] text-white font-bold py-4 rounded-xl shadow-lg shadow-emerald-900/10 active:scale-[0.98] transition-all flex items-center justify-center gap-2"
-          >
-            {isLoading ? (
-              <span className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
-            ) : (
-              <>
-                Entrar <ArrowRight size={18} />
-              </>
-            )}
-          </button>
-        </form>
       </div>
     </div>
   );
