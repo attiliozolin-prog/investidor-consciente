@@ -980,25 +980,6 @@ const TransactionHistoryModal: React.FC<{
   );
 };
 
-              setProfile(p);
-              onComplete(p);
-            }}
-            className="flex flex-col p-5 text-left bg-white border-2 border-transparent hover:border-purple-200 hover:bg-purple-50 hover:shadow-lg rounded-2xl transition-all group"
-          >
-            <span className="font-bold text-gray-800 text-lg mb-1">{risk}</span>
-            <span className="text-sm text-gray-500">
-              {risk === RiskProfile.CONSERVATIVE
-                ? "Segurança acima de tudo."
-                : risk === RiskProfile.BOLD
-                ? "Aceito riscos por retorno."
-                : "Busco equilíbrio."}
-            </span>
-          </button>
-        ))}
-      </div>
-    </div>
-  );
-
   return (
     <div className="min-h-screen flex flex-col justify-center max-w-md mx-auto px-6 py-12">
       <div className="mb-8 flex gap-2">
