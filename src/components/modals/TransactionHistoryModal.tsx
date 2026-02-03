@@ -1,6 +1,7 @@
 import React from "react";
 import { ArrowDownLeft, ArrowUpRight, Trash2, X } from "lucide-react";
 import { Transaction } from "../../types";
+import { Transaction, Holding } from "./domain/portfolio/types";
 
 interface Props {
   transactions: Transaction[];
