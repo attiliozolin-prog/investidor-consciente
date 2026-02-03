@@ -1,3 +1,4 @@
+import { Transaction, Holding } from "./domain/portfolio/types";
 import React, { useMemo } from "react";
 import {
   Eye,
