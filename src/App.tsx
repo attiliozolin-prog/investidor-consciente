@@ -426,45 +426,6 @@ const LogoIcon = ({ className }: { className?: string }) => (
     />
   </svg>
 );
-
-const Tooltip: React.FC<{
-  term: string;
-  label?: string;
-  children?: React.ReactNode;
-}> = ({ term, label, children }) => {
-  const [isOpen, setIsOpen] = useState(false);
-  const glossaryItem = GLOSSARY.find(
-    (g) => g.term.includes(term) || g.term === term
-  );
-  const definition = glossaryItem
-    ? glossaryItem.definition
-    : "Termo técnico financeiro.";
-
-  return (
-    <div className="relative inline-flex items-center gap-1 group">
-      <span
-        className="cursor-help border-b border-dotted border-gray-400 hover:border-brand-500 transition-colors"
-        onClick={() => setIsOpen(!isOpen)}
-        onMouseEnter={() => setIsOpen(true)}
-        onMouseLeave={() => setIsOpen(false)}
-      >
-        {children || label || term}
-      </span>
-      <Info
-        size={14}
-        className="text-gray-400 group-hover:text-brand-500 transition-colors"
-      />
-      {isOpen && (
-        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-64 bg-gray-900 text-white text-sm p-3 rounded-xl shadow-xl z-50 animate-in fade-in slide-in-from-bottom-2">
-          <p className="font-semibold mb-1 text-emerald-100">{term}</p>
-          <p className="leading-relaxed text-gray-300 text-xs">{definition}</p>
-          <div className="absolute top-full left-1/2 -translate-x-1/2 -mt-2 border-8 border-transparent border-t-gray-900"></div>
-        </div>
-      )}
-    </div>
-  );
-};
-
 const MetricBox = ({
   label,
   value,
