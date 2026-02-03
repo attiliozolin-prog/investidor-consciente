@@ -58,6 +58,7 @@ import Onboarding from "./components/onboarding";
 import Tooltip from "./components/common/Tooltip";
 import MetricBox from "./components/common/MetricBox";
 import TransactionHistoryModal from "./components/modals/TransactionHistoryModal";
+import AddTransactionModal from "./components/modals/AddTransactionModal";
 
 // --- IMPORTAÇÃO DA NOVA INTELIGÊNCIA ARTIFICIAL ---
 import { IA } from './IA'; 
@@ -674,34 +675,6 @@ const StockModal: React.FC<{
     </div>
   );
 };
-
-const AddTransactionModal: React.FC<{
-  onClose: () => void;
-  onSave: (t: Omit<Transaction, "id">) => void;
-}> = ({ onClose, onSave }) => {
-  const [ticker, setTicker] = useState(STOCKS_DB[0].ticker);
-  const [type, setType] = useState<"BUY" | "SELL">("BUY");
-  const [quantity, setQuantity] = useState<string>("");
-  const [price, setPrice] = useState<string>("");
-  const [date, setDate] = useState(new Date().toISOString().split("T")[0]);
-
-  const selectedAsset = STOCKS_DB.find((s) => s.ticker === ticker);
-  const isFixedIncome = selectedAsset?.assetType === "fixed_income";
-
-  useEffect(() => {
-    if (selectedAsset && !price && !isFixedIncome)
-      setPrice(selectedAsset.price.toFixed(2));
-    if (isFixedIncome) setQuantity("1");
-  }, [ticker, isFixedIncome]);
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!price || !ticker) return;
-    const finalQty = isFixedIncome ? 1 : Number(quantity);
-    if (!finalQty) return;
-    onSave({ ticker, type, quantity: finalQty, price: Number(price), date });
-    onClose();
-  };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/60 backdrop-blur-sm animate-in fade-in">
