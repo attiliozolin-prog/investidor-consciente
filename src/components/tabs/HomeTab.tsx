@@ -368,3 +368,5 @@ const HomeTab: React.FC<any> = ({
     </div>
   );
 };
+
+export default HomeTab;
