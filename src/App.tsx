@@ -55,6 +55,7 @@ import {
   PolarRadiusAxis,
 } from "recharts";
 import Onboarding from "./components/onboarding";
+import Tooltip from "./components/common/Tooltip";
 
 // --- IMPORTAÇÃO DA NOVA INTELIGÊNCIA ARTIFICIAL ---
 import { IA } from './IA'; 
