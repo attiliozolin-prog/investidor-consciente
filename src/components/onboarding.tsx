@@ -93,7 +93,7 @@ export default function Onboarding({ onComplete }: Props) {
 
             <button
               onClick={() => {
-                setProfile({ ...profile, experienceLevel: "experiente" });
+                setProfile({ ...profile, experienceLevel: "avancado" });
                 next();
               }}
               className="w-full p-5 rounded-2xl border hover:border-emerald-300 hover:bg-emerald-50 text-left transition-all"
