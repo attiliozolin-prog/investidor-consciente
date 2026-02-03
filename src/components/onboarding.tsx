@@ -9,8 +9,6 @@ import {
 interface Props {
   onComplete: (profile: UserProfile) => void;
 }
-  ) => void;
-}
 
 export default function Onboarding({ onComplete }: Props) {
   const [step, setStep] = useState(1);
@@ -21,11 +19,8 @@ export default function Onboarding({ onComplete }: Props) {
     esgImportance: 0.5,
     riskProfile: null,
     isOnboardingComplete: false,
+    experienceLevel: undefined,
   });
-
-  const [experienceLevel, setExperienceLevel] = useState<
-    "beginner" | "experienced" | null
-  >(null);
 
   const next = () => setStep((s) => s + 1);
 
@@ -52,17 +47,15 @@ export default function Onboarding({ onComplete }: Props) {
             </h1>
 
             <p className="text-gray-600 leading-relaxed">
-              Este não é um aplicativo para comprar ou vender investimentos.
+              Este <strong>não é</strong> um aplicativo para comprar ou vender investimentos.
               <br />
-              Aqui você <strong>organiza sua carteira</strong>, entende seus
-              riscos e recebe <strong>orientações inteligentes</strong> para
-              decidir melhor.
+              Aqui você <strong>organiza sua carteira</strong>, entende riscos e recebe
+              <strong> orientações inteligentes</strong>.
             </p>
 
             <p className="text-sm text-gray-500">
-              Pense nele como um <strong>consultor de bolso</strong>: simples,
-              acessível e sempre disponível para te ajudar a cuidar do seu
-              dinheiro.
+              Pense nele como um <strong>consultor de bolso</strong>, sempre disponível
+              para te ajudar a tomar decisões melhores.
             </p>
 
             <button
@@ -82,32 +75,32 @@ export default function Onboarding({ onComplete }: Props) {
             </h2>
 
             <p className="text-sm text-gray-500">
-              Isso nos ajuda a ajustar a linguagem, os avisos e os insights.
+              Isso ajusta a linguagem, os alertas e os insights do app.
             </p>
 
             <button
               onClick={() => {
-                setExperienceLevel("beginner");
+                setProfile({ ...profile, experienceLevel: "iniciante" });
                 next();
               }}
               className="w-full p-5 rounded-2xl border hover:border-emerald-300 hover:bg-emerald-50 text-left transition-all"
             >
               <div className="font-bold">Sou iniciante</div>
               <div className="text-sm text-gray-500">
-                Nunca investi ou estou dando os primeiros passos
+                Nunca investi ou estou começando agora
               </div>
             </button>
 
             <button
               onClick={() => {
-                setExperienceLevel("experienced");
+                setProfile({ ...profile, experienceLevel: "experiente" });
                 next();
               }}
               className="w-full p-5 rounded-2xl border hover:border-emerald-300 hover:bg-emerald-50 text-left transition-all"
             >
               <div className="font-bold">Já tenho experiência</div>
               <div className="text-sm text-gray-500">
-                Quero acompanhar, rebalancear e receber análises
+                Quero monitorar, rebalancear e receber análises
               </div>
             </button>
           </div>
@@ -121,7 +114,7 @@ export default function Onboarding({ onComplete }: Props) {
             </h2>
 
             <p className="text-sm text-gray-500">
-              Não é algo definitivo — você poderá mudar isso depois.
+              Isso pode ser alterado depois.
             </p>
 
             {Object.values(InvestmentGoal).map((goal) => (
@@ -146,10 +139,6 @@ export default function Onboarding({ onComplete }: Props) {
               Como você se sente em relação a riscos?
             </h2>
 
-            <p className="text-sm text-gray-500">
-              Toda carteira oscila. A diferença está em quanto isso te incomoda.
-            </p>
-
             <button
               onClick={() => {
                 setProfile({ ...profile, riskProfile: RiskProfile.CONSERVATIVE });
@@ -161,7 +150,7 @@ export default function Onboarding({ onComplete }: Props) {
               <div>
                 <div className="font-bold">Prefiro segurança</div>
                 <div className="text-sm text-gray-500">
-                  Menos oscilações, mais previsibilidade
+                  Menos oscilações
                 </div>
               </div>
             </button>
@@ -177,7 +166,7 @@ export default function Onboarding({ onComplete }: Props) {
               <div>
                 <div className="font-bold">Equilíbrio</div>
                 <div className="text-sm text-gray-500">
-                  Um pouco de risco, um pouco de estabilidade
+                  Risco controlado
                 </div>
               </div>
             </button>
@@ -193,7 +182,7 @@ export default function Onboarding({ onComplete }: Props) {
               <div>
                 <div className="font-bold">Busco mais retorno</div>
                 <div className="text-sm text-gray-500">
-                  Aceito oscilações no curto prazo
+                  Aceito oscilações
                 </div>
               </div>
             </button>
@@ -207,22 +196,15 @@ export default function Onboarding({ onComplete }: Props) {
               Além do retorno financeiro
             </h2>
 
-            <p className="text-gray-600 text-sm leading-relaxed">
-              Algumas pessoas investem apenas pensando em lucro.
-              <br />
-              Outras também consideram como as empresas atuam no meio ambiente,
-              na sociedade e na forma como são administradas.
-            </p>
-
-            <p className="text-xs text-gray-500">
-              Você não precisa dominar esse tema. Basta indicar o que faz mais
-              sentido para você.
+            <p className="text-sm text-gray-600">
+              Você também pode considerar o impacto ambiental, social e ético
+              das empresas — no seu ritmo.
             </p>
 
             <div className="bg-gray-50 p-6 rounded-2xl space-y-4">
               <div className="flex justify-between text-sm font-semibold text-gray-500">
-                <span>Foco em retorno</span>
-                <span>Impacto positivo</span>
+                <span>Retorno</span>
+                <span>Impacto</span>
               </div>
               <input
                 type="range"
@@ -245,7 +227,6 @@ export default function Onboarding({ onComplete }: Props) {
                 onComplete({
                   ...profile,
                   isOnboardingComplete: true,
-                  experienceLevel: experienceLevel!,
                 })
               }
               className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-4 rounded-xl flex items-center justify-center gap-2"
