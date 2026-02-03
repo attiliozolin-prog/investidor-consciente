@@ -979,26 +979,6 @@ const TransactionHistoryModal: React.FC<{
     </div>
   );
 };
-
-  return (
-    <div className="min-h-screen flex flex-col justify-center max-w-md mx-auto px-6 py-12">
-      <div className="mb-8 flex gap-2">
-        {[1, 2, 3].map((i) => (
-          <div
-            key={i}
-            className={`h-1.5 flex-1 rounded-full transition-colors ${
-              i <= step ? "bg-emerald-500" : "bg-gray-200"
-            }`}
-          />
-        ))}
-      </div>
-      {step === 1 && renderStep1()}
-      {step === 2 && renderStep2()}
-      {step === 3 && renderStep3()}
-    </div>
-  );
-};
-
 const LoginScreen: React.FC<{ onLogin: () => void }> = ({ onLogin }) => {
   const [isLoading, setIsLoading] = useState(false);
   const handleSubmit = (e: React.FormEvent) => {
