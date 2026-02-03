@@ -7,10 +7,8 @@ import {
 } from "../types";
 
 interface Props {
-  onComplete: (
-    profile: UserProfile & {
-      experienceLevel: "beginner" | "experienced";
-    }
+  onComplete: (profile: UserProfile) => void;
+}
   ) => void;
 }
 
