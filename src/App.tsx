@@ -1780,7 +1780,6 @@ const PortfolioDashboard: React.FC<any> = ({
 // ==========================================
 
 export default function App() {
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [activeTab, setActiveTab] = useState("home");
   const [showValues, setShowValues] = useState(true);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -1872,7 +1871,6 @@ export default function App() {
     }
   };
 
-  if (!isLoggedIn) return <LoginScreen onLogin={() => setIsLoggedIn(true)} />;
   if (!userProfile.isOnboardingComplete)
     return <Onboarding onComplete={setUserProfile} />;
 
