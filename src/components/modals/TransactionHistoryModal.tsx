@@ -1,7 +1,6 @@
 import React from "react";
 import { ArrowDownLeft, ArrowUpRight, Trash2, X } from "lucide-react";
-import { Transaction } from "../../types";
-import { Transaction, Holding } from "./domain/portfolio/types";
+import { Transaction } from "../../../domain/portfolio/types";
 
 interface Props {
   transactions: Transaction[];
@@ -78,7 +77,7 @@ const TransactionHistoryModal: React.FC<Props> = ({
 
                   <button
                     onClick={() => {
-                      if (confirm("Excluir?")) onDelete(t.id);
+                      if (window.confirm("Excluir?")) onDelete(t.id);
                     }}
                     className="text-gray-300 hover:text-red-500 transition-colors"
                   >
