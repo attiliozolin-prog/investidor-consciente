@@ -13,7 +13,7 @@ import {
   ExternalLink,
 } from "lucide-react";
 
-import { Holding } from "../../../domain/portfolio/types";
+import { Holding } from "../../../types";
 import { IA } from "../../../IA";
 
 /* =======================
