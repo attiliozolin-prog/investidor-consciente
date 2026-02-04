@@ -301,6 +301,12 @@ const STOCKS_DB: StockData[] = [
   },
 ];
 
+type GlossaryTerm = {
+  term: string;
+  definition: string;
+  example?: string;
+};
+
 const GLOSSARY: GlossaryTerm[] = [
   {
     term: "Dividend Yield (DY)",
