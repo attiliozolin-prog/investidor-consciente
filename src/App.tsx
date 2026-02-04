@@ -27,7 +27,7 @@ import AddTransactionModal from "./components/modals/AddTransactionModal";
 import StockModal from "./components/modals/StockModal";
 import HomeTab from "./components/layout/tabs/HomeTab";
 import PortfolioDashboard from "./components/layout/tabs/PortfolioDashboard";
-import { Transaction, Holding } from "./domain/portfolio/types";
+import { Transaction, Holding } from "./types";
 
 // --- IMPORTAÇÃO DA NOVA INTELIGÊNCIA ARTIFICIAL ---
 import { IA } from './IA'; 
