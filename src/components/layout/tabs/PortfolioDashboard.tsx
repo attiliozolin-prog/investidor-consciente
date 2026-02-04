@@ -37,18 +37,6 @@ export type Transaction = {
 
 type AssetType = "stock" | "fii" | "fixed_income";
 
-type Holding = {
-  ticker: string;
-  assetType: AssetType;
-  quantity: number;
-  averagePrice: number;
-  currentPrice: number;
-  totalValue: number;
-  profit: number;
-  profitPercent: number;
-  allocationPercent: number;
-};
-
 /* =======================
    COMPONENT
 ======================= */
