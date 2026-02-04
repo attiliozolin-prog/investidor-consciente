@@ -9,12 +9,11 @@ import {
   Sprout,
   TreeDeciduous,
   Target,
-  AlertTriangle,
   Newspaper,
   ExternalLink,
 } from "lucide-react";
 
-import { Transaction, Holding } from "./domain/portfolio/types";
+import { Holding } from "../../../domain/portfolio/types";
 import { IA } from "../../../IA";
 
 /* =======================
