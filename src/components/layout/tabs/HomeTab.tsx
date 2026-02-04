@@ -20,15 +20,8 @@ import { Holding } from "../../../types";
 import { IA } from "../../../IA";
 
 /* =======================
-   TIPOS
-======================= */
-
-type StrategyFocus = "fixed_income" | "fii" | "stock";
-
-/* =======================
    MOCK NEWS
 ======================= */
-
 const MOCK_NEWS = [
   {
     title: "Mercado segue atento às decisões de juros no Brasil.",
@@ -42,10 +35,11 @@ const MOCK_NEWS = [
   },
 ];
 
+type FocusType = "fixed_income" | "fii" | "stock";
+
 /* =======================
    COMPONENT
 ======================= */
-
 const HomeTab: React.FC<any> = ({
   userProfile,
   onAddTransaction,
@@ -55,9 +49,8 @@ const HomeTab: React.FC<any> = ({
   rankedStocks,
 }) => {
   /* =======================
-     MÉTRICAS GERAIS
+     MÉTRICAS
   ======================= */
-
   const totalBalance = holdings.reduce(
     (acc: number, h: Holding) => acc + h.totalValue,
     0
@@ -76,33 +69,26 @@ const HomeTab: React.FC<any> = ({
   /* =======================
      COERÊNCIA
   ======================= */
-
   const coherenceScore = useMemo(() => {
     if (totalBalance === 0) return 0;
 
-    let weightedScoreSum = 0;
-
+    let weighted = 0;
     holdings.forEach((h: Holding) => {
       const stockRank = rankedStocks.find(
         (r: any) => r.ticker === h.ticker
       );
       const score = stockRank ? stockRank.coherenceScore : 50;
-      weightedScoreSum += score * h.totalValue;
+      weighted += score * h.totalValue;
     });
 
-    return Math.round(weightedScoreSum / totalBalance);
+    return Math.round(weighted / totalBalance);
   }, [holdings, rankedStocks, totalBalance]);
 
   /* =======================
-     ESTRATÉGIA DO MÊS (SEM TICKERS)
+     ESTRATÉGIA DO MÊS
   ======================= */
-
   const strategy = useMemo(() => {
-    const target: Record<StrategyFocus, number> = {
-      fixed_income: 0.3,
-      fii: 0.4,
-      stock: 0.3,
-    };
+    const target = { fixed_income: 0.3, fii: 0.4, stock: 0.3 };
 
     if (userProfile.riskProfile === "Conservador") {
       target.fixed_income = 0.6;
@@ -114,66 +100,64 @@ const HomeTab: React.FC<any> = ({
       target.stock = 0.5;
     }
 
-    const current: Record<StrategyFocus | "total", number> = {
-      fixed_income: 0,
-      fii: 0,
-      stock: 0,
-      total: 0,
-    };
+    const sums = { fixed_income: 0, fii: 0, stock: 0, total: 0 };
 
     holdings.forEach((h: Holding) => {
-      current[h.assetType] += h.totalValue;
-      current.total += h.totalValue;
+      sums[h.assetType] += h.totalValue;
+      sums.total += h.totalValue;
     });
 
-    const total = current.total || 1;
+    const total = sums.total || 1;
 
-    const gaps: Record<StrategyFocus, number> = {
-      fixed_income: target.fixed_income - current.fixed_income / total,
-      fii: target.fii - current.fii / total,
-      stock: target.stock - current.stock / total,
+    const gaps = {
+      fixed_income: target.fixed_income - sums.fixed_income / total,
+      fii: target.fii - sums.fii / total,
+      stock: target.stock - sums.stock / total,
     };
 
-    let focus: StrategyFocus = "fixed_income";
+    let focus: FocusType = "fixed_income";
     let maxGap = -Infinity;
 
-    (Object.keys(gaps) as StrategyFocus[]).forEach((key) => {
+    (Object.keys(gaps) as FocusType[]).forEach((key) => {
       if (gaps[key] > maxGap) {
         maxGap = gaps[key];
         focus = key;
       }
     });
 
-    if (focus === "fii") {
-      return {
+    const content = {
+      fixed_income: {
+        title: "Foco em Renda Fixa",
+        icon: <Landmark className="text-blue-600" />,
+        text:
+          "A renda fixa traz previsibilidade e proteção. É ideal para equilibrar risco, formar reserva e reduzir a volatilidade da carteira.",
+        tip:
+          "No seu app de investimentos, procure por Tesouro Direto, CDBs e LCIs/LCAs.",
+      },
+      fii: {
         title: "Foco em Fundos Imobiliários",
         icon: <Building2 className="text-emerald-600" />,
-        description:
-          "Fundos Imobiliários ajudam a gerar renda recorrente e diversificar a carteira. São ativos negociados em bolsa e, no Brasil, geralmente terminam com o número 11. Procure por FIIs alinhados ao seu perfil no app de investimentos.",
-      };
-    }
-
-    if (focus === "stock") {
-      return {
+        text:
+          "Fundos imobiliários geram renda recorrente e ajudam a diversificar sem precisar comprar imóveis.",
+        tip:
+          "No Brasil, FIIs normalmente terminam com o número 11 (ex: XXXX11).",
+      },
+      stock: {
         title: "Foco em Ações",
-        icon: <LineChart className="text-blue-600" />,
-        description:
-          "Ações representam participação em empresas. São indicadas para crescimento no longo prazo e podem oscilar mais no curto prazo. Busque empresas sólidas, alinhadas ao seu perfil de risco.",
-      };
-    }
-
-    return {
-      title: "Foco em Renda Fixa",
-      icon: <Landmark className="text-amber-600" />,
-      description:
-        "Renda fixa traz previsibilidade e segurança para a carteira. É essencial para equilíbrio, reserva de emergência e proteção em cenários de volatilidade.",
+        icon: <LineChart className="text-purple-600" />,
+        text:
+          "Ações são indicadas para crescimento de longo prazo, permitindo participar diretamente dos resultados das empresas.",
+        tip:
+          "Busque empresas sólidas, com bons fundamentos e alinhadas ao seu perfil de risco.",
+      },
     };
+
+    return content[focus];
   }, [holdings, userProfile]);
 
   /* =======================
      RENDER
   ======================= */
-
   return (
     <div className="space-y-6 pb-32">
       {/* PATRIMÔNIO */}
@@ -241,17 +225,13 @@ const HomeTab: React.FC<any> = ({
       {/* ESTRATÉGIA DO MÊS */}
       <div className="bg-white rounded-3xl p-6 border">
         <div className="flex items-center gap-2 mb-3">
-          <Target className="text-emerald-500" />
-          <h3 className="font-bold">Estratégia do Mês</h3>
+          {strategy.icon}
+          <h3 className="font-bold text-lg">{strategy.title}</h3>
         </div>
 
-        <div className="flex items-start gap-3 bg-gray-50 p-4 rounded-xl">
-          <div className="mt-1">{strategy.icon}</div>
-          <div>
-            <p className="font-bold mb-1">{strategy.title}</p>
-            <p className="text-sm text-gray-600">{strategy.description}</p>
-          </div>
-        </div>
+        <p className="text-sm text-gray-700 mb-3">{strategy.text}</p>
+
+        <p className="text-xs text-gray-500 italic">{strategy.tip}</p>
       </div>
 
       {/* NEWS */}
