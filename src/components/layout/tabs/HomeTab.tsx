@@ -11,16 +11,13 @@ import {
   Target,
   Newspaper,
   ExternalLink,
-  Landmark,
-  Building2,
-  LineChart,
 } from "lucide-react";
 
 import { Holding } from "../../../types";
 import { IA } from "../../../IA";
 
 /* =======================
-   MOCK NEWS
+   MOCK NEWS (local)
 ======================= */
 const MOCK_NEWS = [
   {
@@ -35,8 +32,6 @@ const MOCK_NEWS = [
   },
 ];
 
-type FocusType = "fixed_income" | "fii" | "stock";
-
 /* =======================
    COMPONENT
 ======================= */
@@ -49,7 +44,7 @@ const HomeTab: React.FC<any> = ({
   rankedStocks,
 }) => {
   /* =======================
-     MÉTRICAS
+     MÉTRICAS GERAIS
   ======================= */
   const totalBalance = holdings.reduce(
     (acc: number, h: Holding) => acc + h.totalValue,
@@ -72,22 +67,23 @@ const HomeTab: React.FC<any> = ({
   const coherenceScore = useMemo(() => {
     if (totalBalance === 0) return 0;
 
-    let weighted = 0;
+    let weightedScoreSum = 0;
+
     holdings.forEach((h: Holding) => {
       const stockRank = rankedStocks.find(
         (r: any) => r.ticker === h.ticker
       );
       const score = stockRank ? stockRank.coherenceScore : 50;
-      weighted += score * h.totalValue;
+      weightedScoreSum += score * h.totalValue;
     });
 
-    return Math.round(weighted / totalBalance);
+    return Math.round(weightedScoreSum / totalBalance);
   }, [holdings, rankedStocks, totalBalance]);
 
   /* =======================
-     ESTRATÉGIA DO MÊS
+     REBALANCEAMENTO
   ======================= */
-  const strategy = useMemo(() => {
+  const rebalancingStrategy = useMemo(() => {
     const target = { fixed_income: 0.3, fii: 0.4, stock: 0.3 };
 
     if (userProfile.riskProfile === "Conservador") {
@@ -100,59 +96,50 @@ const HomeTab: React.FC<any> = ({
       target.stock = 0.5;
     }
 
-    const sums = { fixed_income: 0, fii: 0, stock: 0, total: 0 };
+    const currentSums = { fixed_income: 0, fii: 0, stock: 0, total: 0 };
 
     holdings.forEach((h: Holding) => {
-      sums[h.assetType] += h.totalValue;
-      sums.total += h.totalValue;
+      if (h.assetType === "fixed_income")
+        currentSums.fixed_income += h.totalValue;
+      else if (h.assetType === "fii")
+        currentSums.fii += h.totalValue;
+      else currentSums.stock += h.totalValue;
+
+      currentSums.total += h.totalValue;
     });
 
-    const total = sums.total || 1;
+    const totalCalc = currentSums.total || 1;
 
-    const gaps = {
-      fixed_income: target.fixed_income - sums.fixed_income / total,
-      fii: target.fii - sums.fii / total,
-      stock: target.stock - sums.stock / total,
+    const current = {
+      fixed_income: currentSums.fixed_income / totalCalc,
+      fii: currentSums.fii / totalCalc,
+      stock: currentSums.stock / totalCalc,
     };
 
-    let focus: FocusType = "fixed_income";
+    const gaps = {
+      fixed_income: target.fixed_income - current.fixed_income,
+      fii: target.fii - current.fii,
+      stock: target.stock - current.stock,
+    };
+
+    let focus: "fixed_income" | "fii" | "stock" = "fixed_income";
     let maxGap = -Infinity;
 
-    (Object.keys(gaps) as FocusType[]).forEach((key) => {
+    (Object.keys(gaps) as Array<keyof typeof gaps>).forEach((key) => {
       if (gaps[key] > maxGap) {
         maxGap = gaps[key];
         focus = key;
       }
     });
 
-    const content = {
-      fixed_income: {
-        title: "Foco em Renda Fixa",
-        icon: <Landmark className="text-blue-600" />,
-        text:
-          "A renda fixa traz previsibilidade e proteção. É ideal para equilibrar risco, formar reserva e reduzir a volatilidade da carteira.",
-        tip:
-          "No seu app de investimentos, procure por Tesouro Direto, CDBs e LCIs/LCAs.",
-      },
-      fii: {
-        title: "Foco em Fundos Imobiliários",
-        icon: <Building2 className="text-emerald-600" />,
-        text:
-          "Fundos imobiliários geram renda recorrente e ajudam a diversificar sem precisar comprar imóveis.",
-        tip:
-          "No Brasil, FIIs normalmente terminam com o número 11 (ex: XXXX11).",
-      },
-      stock: {
-        title: "Foco em Ações",
-        icon: <LineChart className="text-purple-600" />,
-        text:
-          "Ações são indicadas para crescimento de longo prazo, permitindo participar diretamente dos resultados das empresas.",
-        tip:
-          "Busque empresas sólidas, com bons fundamentos e alinhadas ao seu perfil de risco.",
-      },
-    };
+    const focusName =
+      focus === "fixed_income"
+        ? "Renda Fixa"
+        : focus === "fii"
+        ? "Fundos Imobiliários"
+        : "Ações";
 
-    return content[focus];
+    return { focusClass: focusName };
   }, [holdings, userProfile]);
 
   /* =======================
@@ -222,16 +209,28 @@ const HomeTab: React.FC<any> = ({
         </div>
       )}
 
-      {/* ESTRATÉGIA DO MÊS */}
+      {/* INSIGHTS HEADER */}
+      <div className="bg-white rounded-3xl p-6 border">
+        <h3 className="font-bold text-lg mb-2">
+          Insights para decisões mais conscientes
+        </h3>
+        <p className="text-sm text-gray-600">
+          Essas análises ajudam você a entender o equilíbrio da sua carteira.
+          De acordo com seu perfil, esse deve ser o foco de seus próximos
+          investimentos.
+        </p>
+      </div>
+
+      {/* ESTRATÉGIA */}
       <div className="bg-white rounded-3xl p-6 border">
         <div className="flex items-center gap-2 mb-3">
-          {strategy.icon}
-          <h3 className="font-bold text-lg">{strategy.title}</h3>
+          <Target className="text-emerald-600" />
+          <h3 className="font-bold">Estratégia do Mês</h3>
         </div>
 
-        <p className="text-sm text-gray-700 mb-3">{strategy.text}</p>
-
-        <p className="text-xs text-gray-500 italic">{strategy.tip}</p>
+        <p className="text-sm text-gray-700">
+          Foco em <strong>{rebalancingStrategy.focusClass}</strong>
+        </p>
       </div>
 
       {/* NEWS */}
