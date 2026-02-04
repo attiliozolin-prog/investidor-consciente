@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { X, Hash, DollarSign, Calendar } from "lucide-react";
 import { StockData } from "../../types";
-import { Transaction } from "../../../domain/portfolio/types";
 
 interface Props {
   stocks: StockData[];
