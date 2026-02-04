@@ -17,21 +17,6 @@ import { Holding } from "../../../domain/portfolio/types";
 import { IA } from "../../../IA";
 
 /* =======================
-   TYPES
-======================= */
-type Holding = {
-  ticker: string;
-  assetType: "stock" | "fii" | "fixed_income";
-  quantity: number;
-  averagePrice: number;
-  currentPrice: number;
-  totalValue: number;
-  profit: number;
-  profitPercent: number;
-  allocationPercent: number;
-};
-
-/* =======================
    MOCK NEWS (local)
 ======================= */
 const MOCK_NEWS = [
