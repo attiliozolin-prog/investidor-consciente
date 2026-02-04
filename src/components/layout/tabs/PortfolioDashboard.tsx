@@ -20,7 +20,7 @@ import {
   Legend,
 } from "recharts";
 import { Transaction, Holding } from "./domain/portfolio/types";
-import TransactionHistoryModal from "../modals/TransactionHistoryModal";
+import TransactionHistoryModal from "../../modals/TransactionHistoryModal";
 
 /* =======================
    TYPES (LOCAIS)
