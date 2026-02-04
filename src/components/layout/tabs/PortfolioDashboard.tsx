@@ -3,10 +3,7 @@ import {
   Wallet,
   TrendingUp,
   TrendingDown,
-  AlertTriangle,
-  Check,
   Layers,
-  Coins,
   Plus,
   Trash2,
   History,
@@ -19,23 +16,9 @@ import {
   Tooltip as RechartsTooltip,
   Legend,
 } from "recharts";
+
 import { Holding, Transaction } from "../../../domain/portfolio/types";
 import TransactionHistoryModal from "../../modals/TransactionHistoryModal";
-
-/* =======================
-   TYPES (LOCAIS)
-======================= */
-
-export type Transaction = {
-  id: string;
-  ticker: string;
-  type: "BUY" | "SELL";
-  quantity: number;
-  price: number;
-  date: string;
-};
-
-type AssetType = "stock" | "fii" | "fixed_income";
 
 /* =======================
    COMPONENT
@@ -50,13 +33,7 @@ const PortfolioDashboard: React.FC<any> = ({
   rankedStocks,
   showValues,
 }) => {
-  const [contributionAmount, setContributionAmount] = useState<string>("");
-  const [smartSuggestion, setSmartSuggestion] = useState<
-    { ticker: string; qty: number; cost: number; reason: string }[] | null
-  >(null);
-  const [suggestionType, setSuggestionType] = useState<string>("");
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
-
   const contributionSectionRef = useRef<HTMLDivElement>(null);
 
   /* =======================
@@ -91,9 +68,12 @@ const PortfolioDashboard: React.FC<any> = ({
       if (value.qty <= 0) return;
 
       const stock = rankedStocks.find((s: any) => s.ticker === ticker);
-      const assetType: AssetType = stock?.assetType || "stock";
+      const assetType = stock?.assetType || "stock";
+
       const currentPrice =
-        assetType === "fixed_income" ? value.totalCost / value.qty : stock?.price || 0;
+        assetType === "fixed_income"
+          ? value.totalCost / value.qty
+          : stock?.price || 0;
 
       const totalValue =
         assetType === "fixed_income"
@@ -130,7 +110,7 @@ const PortfolioDashboard: React.FC<any> = ({
   }, [transactions, rankedStocks]);
 
   /* =======================
-     TOTALS
+     TOTAIS
   ======================= */
 
   const totalBalance = holdings.reduce((acc, h) => acc + h.totalValue, 0);
@@ -169,6 +149,7 @@ const PortfolioDashboard: React.FC<any> = ({
         <div className="flex items-center gap-2 text-gray-400 text-sm mb-1">
           <Wallet size={16} /> Patrimônio Total
         </div>
+
         <div className="text-4xl font-bold mb-4">
           {showValues
             ? `R$ ${totalBalance.toLocaleString("pt-BR", {
@@ -176,6 +157,7 @@ const PortfolioDashboard: React.FC<any> = ({
               })}`
             : "••••••••"}
         </div>
+
         <div className="grid grid-cols-2 gap-6 border-t border-gray-800 pt-4">
           <div>
             <div className="text-xs text-gray-500 mb-1">Investido</div>
@@ -185,6 +167,7 @@ const PortfolioDashboard: React.FC<any> = ({
                 : "••••"}
             </div>
           </div>
+
           <div>
             <div className="text-xs text-gray-500 mb-1">Resultado</div>
             <div
