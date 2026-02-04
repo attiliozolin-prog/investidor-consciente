@@ -17,7 +17,7 @@ import {
   Legend,
 } from "recharts";
 
-import { Holding, Transaction } from "../../../domain/portfolio/types";
+import { Holding, Transaction } from "../../../types";
 import TransactionHistoryModal from "../../modals/TransactionHistoryModal";
 
 /* =======================
