@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { X, Hash, DollarSign, Calendar } from "lucide-react";
-import { Transaction, StockData } from "../../types";
-import { Transaction, Holding } from "./domain/portfolio/types";
+import { StockData } from "../../types";
+import { Transaction } from "../../../domain/portfolio/types";
 
 interface Props {
   stocks: StockData[];
@@ -18,7 +18,9 @@ const AddTransactionModal: React.FC<Props> = ({
   const [type, setType] = useState<"BUY" | "SELL">("BUY");
   const [quantity, setQuantity] = useState("");
   const [price, setPrice] = useState("");
-  const [date, setDate] = useState(new Date().toISOString().split("T")[0]);
+  const [date, setDate] = useState(
+    new Date().toISOString().split("T")[0]
+  );
 
   const selectedAsset = stocks.find((s) => s.ticker === ticker);
   const isFixedIncome = selectedAsset?.assetType === "fixed_income";
@@ -28,7 +30,7 @@ const AddTransactionModal: React.FC<Props> = ({
       setPrice(selectedAsset.price.toFixed(2));
     }
     if (isFixedIncome) setQuantity("1");
-  }, [ticker, isFixedIncome]);
+  }, [ticker, isFixedIncome, selectedAsset, price]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -101,7 +103,10 @@ const AddTransactionModal: React.FC<Props> = ({
 
           {!isFixedIncome && (
             <div className="relative">
-              <Hash size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
+              <Hash
+                size={16}
+                className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500"
+              />
               <input
                 type="number"
                 value={quantity}
@@ -114,7 +119,10 @@ const AddTransactionModal: React.FC<Props> = ({
           )}
 
           <div className="relative">
-            <DollarSign size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
+            <DollarSign
+              size={16}
+              className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500"
+            />
             <input
               type="number"
               step="0.01"
@@ -127,7 +135,10 @@ const AddTransactionModal: React.FC<Props> = ({
           </div>
 
           <div className="relative">
-            <Calendar size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
+            <Calendar
+              size={16}
+              className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500"
+            />
             <input
               type="date"
               value={date}
