@@ -19,7 +19,7 @@ import {
   Tooltip as RechartsTooltip,
   Legend,
 } from "recharts";
-import { Transaction, Holding } from "./domain/portfolio/types";
+import { Holding, Transaction } from "../../../domain/portfolio/types";
 import TransactionHistoryModal from "../../modals/TransactionHistoryModal";
 
 /* =======================
