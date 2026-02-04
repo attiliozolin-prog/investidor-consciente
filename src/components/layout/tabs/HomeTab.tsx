@@ -15,7 +15,7 @@ import {
 } from "lucide-react";
 
 import { Transaction, Holding } from "./domain/portfolio/types";
-import { IA } from "../../IA";
+import { IA } from "../../../IA";
 
 /* =======================
    TYPES
