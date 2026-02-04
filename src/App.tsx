@@ -61,6 +61,24 @@ export interface UserProfile {
 // 2. MOCK DATA (STOCKS_DB & GLOSSARY)
 // ==========================================
 
+type StockData = {
+  ticker: string;
+  name: string;
+  sector: string;
+  assetType: "stock" | "fii" | "fixed_income";
+  price: number;
+  financialScore: number;
+  esgScore: number;
+  dividendYield: number;
+  peRatio: number;
+  roe: number;
+  volatility: "Baixa" | "Média" | "Alta" | "Muito Alta";
+  tags: string[];
+  description: string;
+  esgHighlight: string;
+  riskReason?: string;
+};
+
 const STOCKS_DB: StockData[] = [
   // --- STOCKS ---
   {
