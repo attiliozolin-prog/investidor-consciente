@@ -157,19 +157,27 @@ const HomeTab: React.FC<any> = ({
   const coherenceStatus = getCoherenceStatus(coherenceScore);
 
   /* =======================
-     REBALANCEAMENTO (Lógica Atualizada Livo)
+     REBALANCEAMENTO (Lógica Atualizada Livo + Personalizado)
   ======================= */
   const rebalancingStrategy = useMemo(() => {
     // 1. Definição das Metas (Targets) em Decimal
-    // Moderado (Padrão): 40% RF, 30% FII, 30% Ações
-    const target = { fixed_income: 0.4, fii: 0.3, stock: 0.3 };
+    let target = { fixed_income: 0.4, fii: 0.3, stock: 0.3 }; // Default (Moderado)
 
-    if (userProfile.riskProfile === "Conservador") {
+    if (userProfile.riskProfile === "Personalizado" && userProfile.customTargets) {
+      // CONVERSÃO IMPORTANTE: O modal salva 0-100, aqui usamos 0.0-1.0
+      target = {
+        fixed_income: userProfile.customTargets.fixed_income / 100,
+        fii: userProfile.customTargets.fii / 100,
+        stock: userProfile.customTargets.stock / 100
+      };
+    } 
+    else if (userProfile.riskProfile === "Conservador") {
       // Conservador: 80% RF, 15% FII, 5% Ações (Foco total em segurança)
-      target.fixed_income = 0.8; target.fii = 0.15; target.stock = 0.05;
-    } else if (userProfile.riskProfile === "Arrojado") {
+      target = { fixed_income: 0.8, fii: 0.15, stock: 0.05 };
+    } 
+    else if (userProfile.riskProfile === "Arrojado") {
       // Arrojado: 20% RF, 35% FII, 45% Ações (Foco em crescimento)
-      target.fixed_income = 0.2; target.fii = 0.35; target.stock = 0.45;
+      target = { fixed_income: 0.2, fii: 0.35, stock: 0.45 };
     }
 
     const currentSums = { fixed_income: 0, fii: 0, stock: 0, total: 0 };
