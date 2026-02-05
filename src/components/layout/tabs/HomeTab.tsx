@@ -17,7 +17,6 @@ import {
   Search,
   CheckCircle2,
   ArrowRight,
-  AlertTriangle,
 } from "lucide-react";
 
 import { Holding } from "../../../types";
@@ -45,38 +44,35 @@ const MOCK_NEWS = [
 const STRATEGY_CONTENT = {
   fixed_income: {
     title: "Renda Fixa",
-    icon: <ShieldCheck size={32} className="text-blue-600" />,
+    icon: <ShieldCheck size={24} className="text-blue-600" />,
     color: "bg-blue-50 text-blue-900 border-blue-100",
-    barColor: "bg-blue-500",
-    whatIs: "Empréstimo para bancos ou governo em troca de juros seguros.",
-    why: "Sua carteira precisa de estabilidade para proteger seu patrimônio.",
-    howToFind: "Busque por: Tesouro Selic, CDB ou LCI/LCA.",
-    howToDecide: "Reserva? Tesouro Selic. Rentabilidade? CDB > 100% CDI.",
+    whatIs: "Empréstimo que você faz para o governo ou bancos em troca de juros. É a base da segurança.",
+    why: "Sua carteira precisa de estabilidade e liquidez para reduzir riscos e formar sua reserva de emergência.",
+    howToFind: "Busque por 'Tesouro Direto', 'CDB' ou 'LCI/LCA' no app da sua corretora.",
+    howToDecide: "Prefira Tesouro Selic para reserva imediata ou CDBs que paguem acima de 100% do CDI para prazos maiores.",
   },
   fii: {
     title: "Fundos Imobiliários",
-    icon: <Building2 size={32} className="text-orange-600" />,
+    icon: <Building2 size={24} className="text-orange-600" />,
     color: "bg-orange-50 text-orange-900 border-orange-100",
-    barColor: "bg-orange-500",
-    whatIs: "Você vira dono de pedaços de imóveis e recebe aluguéis mensais.",
-    why: "Gera renda passiva mensal isenta de IR na sua conta.",
-    howToFind: "Busque códigos com final 11 (Ex: HGLG11, KNRI11).",
-    howToDecide: "Prefira fundos de 'Tijolo' com imóveis de qualidade.",
+    whatIs: "Fundos que investem em imóveis (shoppings, galpões) ou papéis do setor. Você vira 'dono' de pedacinhos de imóveis.",
+    why: "Sua carteira se beneficiaria de renda mensal passiva (aluguéis) sem a volatilidade extrema das ações.",
+    howToFind: "Procure por códigos com final 11 (ex: HGLG11, KNRI11) na busca de ativos.",
+    howToDecide: "Olhe a qualidade dos imóveis, quem administra o fundo e se ele paga dividendos constantes (Dividend Yield).",
   },
   stock: {
     title: "Ações",
-    icon: <TrendingUp size={32} className="text-emerald-600" />,
+    icon: <TrendingUp size={24} className="text-emerald-600" />,
     color: "bg-emerald-50 text-emerald-900 border-emerald-100",
-    barColor: "bg-emerald-500",
-    whatIs: "Você vira sócio de empresas reais e lucra com o crescimento.",
-    why: "Essencial para bater a inflação no longo prazo.",
-    howToFind: "Busque códigos de 4 letras (Ex: WEG3, ITUB4).",
-    howToDecide: "Busque líderes de setor, lucros crescentes e bom ESG.",
+    whatIs: "Menores pedaços de empresas reais. Você se torna sócio e ganha com o crescimento e lucros delas.",
+    why: "Sua carteira está segura demais e precisa de potencial de crescimento a longo prazo para bater a inflação.",
+    howToFind: "Procure por códigos de 4 letras seguidos de 3 (ON) ou 4 (PN) (ex: WEG3, ITUB4).",
+    howToDecide: "Busque empresas lucrativas, líderes de setor e com boas notas ESG (Sustentabilidade).",
   },
 };
 
 /* =======================
-   HELPER: COERÊNCIA (COR E TEXTO)
+   HELPER: COERÊNCIA (STATUS)
 ======================= */
 const getCoherenceStatus = (score: number) => {
   if (score >= 80) return { color: "bg-emerald-500", text: "Excelente Equilíbrio", textClass: "text-emerald-700" };
@@ -128,7 +124,7 @@ const HomeTab: React.FC<any> = ({
   const coherenceStatus = getCoherenceStatus(coherenceScore);
 
   /* =======================
-     REBALANCEAMENTO (CÁLCULO)
+     REBALANCEAMENTO
   ======================= */
   const rebalancingStrategy = useMemo(() => {
     const target = { fixed_income: 0.3, fii: 0.4, stock: 0.3 };
@@ -172,9 +168,7 @@ const HomeTab: React.FC<any> = ({
 
     return { 
       key: focus,
-      content: STRATEGY_CONTENT[focus],
-      currentPct: current[focus] * 100,
-      targetPct: target[focus] * 100
+      content: STRATEGY_CONTENT[focus] 
     };
   }, [holdings, userProfile]);
 
@@ -183,8 +177,7 @@ const HomeTab: React.FC<any> = ({
   ======================= */
   return (
     <div className="space-y-6 pb-32 animate-in fade-in">
-      
-      {/* 1. PATRIMÔNIO */}
+      {/* 1. PATRIMÔNIO (MANTIDO) */}
       <div className="bg-emerald-900 text-white rounded-3xl p-6 shadow-xl relative overflow-hidden">
         <div className="absolute top-0 right-0 opacity-10 transform translate-x-1/4 -translate-y-1/4">
           <Leaf size={200} />
@@ -218,10 +211,10 @@ const HomeTab: React.FC<any> = ({
         </button>
       </div>
 
-      {/* 2. IA (Consultor) */}
+      {/* 2. IA (MANTIDO) */}
       {totalBalance > 0 && <IA carteira={holdings} />}
 
-      {/* 3. JARDIM CONSCIENTE (AGORA COM BARRA COLORIDA) */}
+      {/* 3. JARDIM CONSCIENTE (VERSÃO NOVA COM BARRA DE CORES) */}
       {totalBalance > 0 && (
         <div className="bg-white rounded-3xl p-6 border border-gray-100 shadow-sm">
           <div className="flex justify-between items-start mb-4">
@@ -239,7 +232,7 @@ const HomeTab: React.FC<any> = ({
             </div>
           </div>
 
-          {/* A BARRA DE PROGRESSO COLORIDA */}
+          {/* BARRA DE PROGRESSO COLORIDA */}
           <div className="relative h-4 bg-gray-100 rounded-full overflow-hidden mb-2">
             <div 
               className={`absolute top-0 left-0 h-full ${coherenceStatus.color} transition-all duration-1000 ease-out`}
@@ -256,10 +249,9 @@ const HomeTab: React.FC<any> = ({
         </div>
       )}
 
-      {/* 4. INSIGHTS + ESTRATÉGIA UNIFICADOS */}
-      <div className="bg-white rounded-3xl border border-gray-200 shadow-sm overflow-hidden">
-        
-        {/* CABEÇALHO UNIFICADO */}
+      {/* 4. INSIGHTS + ESTRATÉGIA (VERSÃO ORIGINAL "PERFEITA" UNIFICADA) */}
+      <div className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden">
+        {/* HEADER DO CARD */}
         <div className="p-6 border-b border-gray-100 bg-gray-50/50">
           <div className="flex items-center gap-2 mb-2">
             <Target className="text-emerald-600" size={20} />
@@ -268,71 +260,71 @@ const HomeTab: React.FC<any> = ({
             </h3>
           </div>
           <p className="text-sm text-gray-600 leading-relaxed">
-            Análise baseada no seu perfil <strong>{userProfile.riskProfile}</strong>.
+            Com base no seu perfil <strong>{userProfile.riskProfile}</strong> e na sua carteira atual, identificamos onde você deve focar seus próximos passos.
           </p>
         </div>
 
-        {/* CORPO DA ESTRATÉGIA */}
+        {/* CORPO DO CARD (ESTRATÉGIA) */}
         <div className="p-6">
           <div className="mb-6">
-            <span className="text-xs font-bold text-gray-400 uppercase tracking-wider flex items-center gap-1">
-              <ArrowRight size={12} /> Foco do Mês
-            </span>
-            
-            <div className="flex items-center gap-4 mt-3 mb-4">
-               <div className={`w-14 h-14 rounded-2xl flex items-center justify-center shadow-sm ${rebalancingStrategy.content.color}`}>
+            <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">Estratégia do Mês</span>
+            <div className="flex items-center gap-3 mt-2">
+               <div className={`w-12 h-12 rounded-full flex items-center justify-center ${rebalancingStrategy.content.color.split(' ')[0]} ${rebalancingStrategy.content.color.split(' ')[1]}`}>
                  {rebalancingStrategy.content.icon}
                </div>
-               
                <div>
-                 <p className="text-sm text-gray-500">Recomendamos aportar em:</p>
+                 <p className="text-sm text-gray-500">Foco recomendado em:</p>
                  <h4 className="text-xl font-bold text-gray-900 leading-tight">
                    {rebalancingStrategy.content.title}
                  </h4>
                </div>
             </div>
-
-            {/* BARRA DE ALOCAÇÃO (ALVO VS ATUAL) */}
-            <div className="bg-gray-100 rounded-full h-3 w-full overflow-hidden relative">
-              <div 
-                className={`h-full ${rebalancingStrategy.content.barColor} opacity-50`}
-                style={{ width: `${Math.min(rebalancingStrategy.currentPct, 100)}%` }}
-              />
-              <div 
-                className="absolute top-0 bottom-0 w-1 bg-black/30 z-10"
-                style={{ left: `${Math.min(rebalancingStrategy.targetPct, 100)}%` }}
-              />
-            </div>
-            <div className="flex justify-between text-[10px] font-bold text-gray-500 mt-1 uppercase tracking-wide">
-              <span>Atual: {rebalancingStrategy.currentPct.toFixed(0)}%</span>
-              <span>Ideal: {rebalancingStrategy.targetPct.toFixed(0)}%</span>
-            </div>
           </div>
 
-          {/* SESSÃO EDUCATIVA */}
-          <div className="grid gap-3">
-            <div className="bg-gray-50 p-4 rounded-xl border border-gray-100">
-              <div className="flex items-center gap-2 mb-1 text-gray-900 font-bold text-xs uppercase">
-                <HelpCircle size={14} className="text-gray-400" /> O que são?
+          {/* SESSÃO EDUCATIVA (ESTILO LISTA LIMPA) */}
+          <div className="space-y-4 bg-gray-50 rounded-2xl p-5 border border-gray-100">
+            
+            <div className="flex gap-3 items-start">
+              <HelpCircle className="text-gray-400 mt-0.5 shrink-0" size={16} />
+              <div>
+                <p className="text-xs font-bold text-gray-700 uppercase mb-1">O que são?</p>
+                <p className="text-sm text-gray-600 leading-relaxed">{rebalancingStrategy.content.whatIs}</p>
               </div>
-              <p className="text-sm text-gray-600">{rebalancingStrategy.content.whatIs}</p>
             </div>
 
-            <div className="bg-gray-50 p-4 rounded-xl border border-gray-100">
-              <div className="flex items-center gap-2 mb-1 text-gray-900 font-bold text-xs uppercase">
-                <CheckCircle2 size={14} className="text-emerald-500" /> Por que agora?
+            <div className="flex gap-3 items-start">
+              <CheckCircle2 className="text-emerald-500 mt-0.5 shrink-0" size={16} />
+              <div>
+                <p className="text-xs font-bold text-gray-700 uppercase mb-1">Por que faz sentido agora?</p>
+                <p className="text-sm text-gray-600 leading-relaxed">{rebalancingStrategy.content.why}</p>
               </div>
-              <p className="text-sm text-gray-600">{rebalancingStrategy.content.why}</p>
             </div>
+
+             <div className="flex gap-3 items-start">
+              <Search className="text-blue-400 mt-0.5 shrink-0" size={16} />
+              <div>
+                <p className="text-xs font-bold text-gray-700 uppercase mb-1">Como encontrar?</p>
+                <p className="text-sm text-gray-600 leading-relaxed">{rebalancingStrategy.content.howToFind}</p>
+              </div>
+            </div>
+
+             <div className="flex gap-3 items-start">
+              <Target className="text-orange-400 mt-0.5 shrink-0" size={16} />
+              <div>
+                <p className="text-xs font-bold text-gray-700 uppercase mb-1">Como decidir?</p>
+                <p className="text-sm text-gray-600 leading-relaxed">{rebalancingStrategy.content.howToDecide}</p>
+              </div>
+            </div>
+
           </div>
         </div>
       </div>
 
-      {/* 5. NEWS */}
+      {/* 5. NEWS (MANTIDO) */}
       <div className="bg-white rounded-3xl p-6 border border-gray-100 shadow-sm">
         <div className="flex items-center gap-2 mb-4">
           <Newspaper className="text-emerald-500" />
-          <h3 className="font-bold text-gray-900">Notícias</h3>
+          <h3 className="font-bold text-gray-900">Notícias do Setor</h3>
         </div>
 
         {MOCK_NEWS.map((news, idx) => (
