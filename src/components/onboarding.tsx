@@ -49,7 +49,7 @@ export default function Onboarding({ onComplete }: Props) {
             </div>
             
             <h1 className="text-3xl font-bold text-gray-900 text-center">
-              Bem vindo(a) a Livo.
+              Bem vindo(a) a Livo!
             </h1>
 
             <div className="space-y-4 text-gray-600 leading-relaxed text-center">
@@ -60,7 +60,7 @@ export default function Onboarding({ onComplete }: Props) {
                 <strong>Não somos um banco nem uma corretora.</strong>
               </p>
               <p>
-               Com a Livo, você aprende mais sobre investimentos, monta a sua carteira equilibrada e monitona onde seu dinheiro está.
+               Com a Livo, você aprende mais sobre investimentos, monta a sua carteira equilibrada e monitona onde seu dinheiro está aplicado.
               </p>
             </div>
 
@@ -199,7 +199,7 @@ export default function Onboarding({ onComplete }: Props) {
         {step === 5 && (
           <div className="space-y-6 animate-in fade-in">
             <h2 className="text-2xl font-bold text-gray-900">
-              Investir também é uma escolha ética
+              Investa com consciência e responsabilidade
             </h2>
 
             <p className="text-sm text-gray-600">
