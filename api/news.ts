@@ -14,23 +14,21 @@ export default async function handler(
     const apiKey = process.env.OPENAI_API_KEY;
     if (!apiKey) throw new Error('Chave OpenAI ausente');
 
-    // 1. BUSCAR DADOS REAIS (RSS Google News - Negócios Brasil)
-    // Usamos o RSS porque é gratuito, rápido e confiável
+    // 1. BUSCAR RSS (Google News Finanças)
     const rssUrl = "https://news.google.com/rss/topics/CAAqJggBCiCPASowCAcLCzcN-ADsAAoSEQgCKhAIAlIWCg0iBAiEAxAGGAE?hl=pt-BR&gl=BR&ceid=BR%3Apt-419";
     const rssResponse = await fetch(rssUrl);
     const xmlText = await rssResponse.text();
 
-    // 2. EXTRAÇÃO SIMPLES (Limpar o XML para não gastar tokens)
-    // Pegamos apenas os primeiros 15 títulos para a IA analisar
-    const titles = xmlText
-      .match(/<title>(.*?)<\/title>/g)
-      ?.map(t => t.replace(/<\/?title>/g, '').replace(' - Google News', ''))
-      .slice(1, 15) // Pula o título do feed e pega 15 notícias
-      .join('\n');
+    // 2. EXTRAÇÃO INTELIGENTE (TÍTULO + LINK)
+    // Extraímos os itens brutos para garantir que o link venha junto
+    const items = xmlText.split('<item>');
+    const rawNews = items.slice(1, 15).map(item => {
+      const title = item.match(/<title>(.*?)<\/title>/)?.[1] || '';
+      const link = item.match(/<link>(.*?)<\/link>/)?.[1] || '';
+      return { title: title.replace(' - Google News', ''), link };
+    }).filter(n => n.title && n.link);
 
-    if (!titles) throw new Error("Não foi possível buscar notícias");
-
-    // 3. CURADORIA DA IA
+    // 3. CURADORIA RIGOROSA DA IA
     const response = await fetch(
       'https://api.openai.com/v1/chat/completions',
       {
@@ -41,26 +39,33 @@ export default async function handler(
         },
         body: JSON.stringify({
           model: 'gpt-4o-mini',
-          temperature: 0.3, // Baixa criatividade para ser fiel aos fatos
+          temperature: 0.3,
           messages: [
             {
               role: 'system',
-              content: `Você é um Editor Chefe de Finanças ESG.
-              Sua missão: Ler as manchetes abaixo e selecionar as 3 mais relevantes para um investidor consciente/ESG no Brasil.
-              Se não houver nada especificamente ESG, escolha as mais impactantes para a economia geral (Juros, Inflação, Bolsa).
+              content: `Você é um Editor Sênior de Investimentos ESG.
               
-              Saída OBRIGATÓRIA em JSON puro (Array de objetos):
+              SUA MISSÃO:
+              Analise a lista de notícias fornecida (Título + Link) e selecione EXATAMENTE 3 notícias.
+              
+              REGRAS DE SELEÇÃO (PRIORIDADE MÁXIMA):
+              1. A primeira notícia DEVE OBRIGATORIAMENTE ser sobre Sustentabilidade, Clima, Energia Renovável ou Governança (ESG). Se não houver explícita, pegue a que mais se aproxima (ex: impacto social, agro, regulação).
+              2. As outras 2 devem ser as mais impactantes para o bolso do investidor (Juros, Inflação, Dólar).
+              3. Você DEVE retornar o LINK original fornecido na entrada.
+              
+              FORMATO DE SAÍDA (JSON ARRAY):
               [
                 { 
-                  "title": "Título curto e chamativo (máx 50 caracteres)", 
-                  "source": "Fonte Original (ex: G1, InfoMoney)",
-                  "impact": "1 frase curta explicando o impacto no bolso ou no mundo." 
+                  "title": "Título resumido (máx 60 chars)", 
+                  "source": "Nome do Veículo (ex: G1, Valor)",
+                  "impact": "Explicação curta do impacto (máx 10 palavras).",
+                  "url": "O link original exato que eu te mandei"
                 }
               ]`
             },
             {
               role: 'user',
-              content: `Manchetes Brutas:\n${titles}`
+              content: `Lista de Notícias:\n${JSON.stringify(rawNews)}`
             },
           ],
         }),
@@ -69,7 +74,7 @@ export default async function handler(
 
     const data = await response.json();
     
-    // Tratamento para extrair o JSON da resposta da IA
+    // Tratamento de JSON
     const rawContent = data.choices[0].message.content;
     const jsonString = rawContent.replace(/```json|```/g, '').trim();
     const news = JSON.parse(jsonString);
@@ -78,11 +83,26 @@ export default async function handler(
 
   } catch (error: any) {
     console.error('Erro News:', error);
-    // Fallback: Se der erro, retorna notícias genéricas para não quebrar a UI
     return res.status(200).json({ 
       news: [
-        { title: "Mercado analisa Copom", source: "Banco Central", impact: "Decisão de juros impacta Renda Fixa." },
-        { title: "Bolsa oscila hoje", source: "B3", impact: "Volatilidade normal do mercado." }
+        { 
+          title: "Mercado analisa Copom e Juros", 
+          source: "Banco Central", 
+          impact: "Volatilidade na Renda Fixa.", 
+          url: "https://www.bcb.gov.br" 
+        },
+        { 
+          title: "Avanço da Energia Limpa no Brasil", 
+          source: "Setor Elétrico", 
+          impact: "Oportunidade em ações de utilidade pública.", 
+          url: "#" 
+        },
+        { 
+          title: "Bolsa fecha em alta", 
+          source: "B3", 
+          impact: "Bons resultados corporativos.", 
+          url: "https://www.b3.com.br" 
+        }
       ] 
     });
   }
