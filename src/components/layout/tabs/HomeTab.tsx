@@ -6,8 +6,6 @@ import {
   TrendingDown,
   Plus,
   Leaf,
-  Sprout,
-  TreeDeciduous,
   Target,
   Newspaper,
   ExternalLink,
@@ -18,7 +16,10 @@ import {
   CheckCircle2,
   ArrowRight,
   RefreshCw,
-  Zap, // Ícone para a Capa
+  Zap,
+  Sparkles,
+  LayoutDashboard,
+  BarChart3
 } from "lucide-react";
 
 import { Holding } from "../../../types";
@@ -86,7 +87,7 @@ const HomeTab: React.FC<any> = ({
   rankedStocks,
 }) => {
   
-  // --- STATE DE NOTÍCIAS (MOCK INICIAL INTELIGENTE) ---
+  // --- STATE DE NOTÍCIAS ---
   const [realNews, setRealNews] = useState<NewsItem[]>([
     {
       type: "capa",
@@ -123,7 +124,6 @@ const HomeTab: React.FC<any> = ({
           setRealNews(data.news);
         }
       } catch (error) {
-        // Mantém o estado atual ou mock de erro
         setRealNews([
            { type: "capa", title: "Ibovespa reage a cenário fiscal e juros futuros", source: "InfoMoney", impact: "Volatilidade pode gerar oportunidades.", url: "#" },
            { type: "relevante", title: "Dólar opera instável com dados dos EUA", source: "InfoMoney", impact: "Atenção a ativos dolarizados.", url: "#" },
@@ -137,7 +137,7 @@ const HomeTab: React.FC<any> = ({
   }, []);
 
   /* =======================
-     MÉTRICAS & CÁLCULOS (MANTIDOS IGUAIS)
+     MÉTRICAS & CÁLCULOS
   ======================= */
   const totalBalance = holdings.reduce((acc: number, h: Holding) => acc + h.totalValue, 0);
   const totalProfit = holdings.reduce((acc: number, h: Holding) => acc + h.profit, 0);
@@ -189,37 +189,80 @@ const HomeTab: React.FC<any> = ({
   return (
     <div className="space-y-6 pb-32 animate-in fade-in">
       
-      {/* 1. PATRIMÔNIO */}
-      <div className="bg-emerald-900 text-white rounded-3xl p-6 shadow-xl relative overflow-hidden">
-        <div className="absolute top-0 right-0 opacity-10 transform translate-x-1/4 -translate-y-1/4">
-          <Leaf size={200} />
+      {/* 1. SE CARTEIRA VAZIA: MOSTRA BOX DE "START" */}
+      {totalBalance === 0 ? (
+        <div className="bg-white rounded-3xl p-8 border border-emerald-100 shadow-sm relative overflow-hidden">
+           {/* Decorative BG */}
+           <div className="absolute top-0 right-0 -mt-4 -mr-4 bg-emerald-50 rounded-full w-32 h-32 blur-2xl opacity-50"></div>
+
+           <div className="relative z-10">
+             <div className="flex items-center gap-3 mb-4">
+               <div className="w-12 h-12 bg-emerald-100 rounded-full flex items-center justify-center text-emerald-600">
+                 <Sparkles size={24} />
+               </div>
+               <h2 className="text-xl font-bold text-gray-900">Vamos começar sua jornada?</h2>
+             </div>
+
+             <p className="text-gray-600 leading-relaxed mb-6">
+               Você ainda não tem investimentos adicionados à Livo. Verifique a <strong>estratégia abaixo</strong> indicada para seu perfil, comece a investir por meio de seu banco ou corretora de preferência e lance seus investimentos aqui.
+             </p>
+
+             <div className="bg-gray-50 rounded-xl p-4 mb-6 border border-gray-100">
+                <p className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-3">Com investimentos cadastrados você desbloqueia:</p>
+                <ul className="space-y-2 text-sm text-gray-700">
+                  <li className="flex items-center gap-2">
+                    <Zap size={16} className="text-amber-500"/> Análises automáticas da <strong>Livo AI</strong>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <BarChart3 size={16} className="text-blue-500"/> Gráficos personalizados de alocação
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <LayoutDashboard size={16} className="text-emerald-500"/> Insights de rebalanceamento
+                  </li>
+                </ul>
+             </div>
+
+             <button 
+               onClick={onAddTransaction}
+               className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-4 rounded-xl flex items-center justify-center gap-2 shadow-lg shadow-emerald-200 transition-all"
+             >
+               <Plus size={20} /> Lançar meu primeiro investimento
+             </button>
+           </div>
         </div>
-        <p className="text-emerald-100 text-sm font-medium">Patrimônio Total</p>
-        <div className="flex items-center gap-3 mt-1 relative z-10">
-          <h2 className="text-4xl font-bold tracking-tight">
-            {showValues ? `R$ ${totalBalance.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}` : "••••••••"}
-          </h2>
-          <button onClick={onToggleValues} className="opacity-80 hover:opacity-100 transition-opacity">
-            {showValues ? <EyeOff size={20} /> : <Eye size={20} />}
+      ) : (
+        /* SE TEM SALDO: MOSTRA PATRIMÔNIO NORMAL */
+        <div className="bg-emerald-900 text-white rounded-3xl p-6 shadow-xl relative overflow-hidden">
+          <div className="absolute top-0 right-0 opacity-10 transform translate-x-1/4 -translate-y-1/4">
+            <Leaf size={200} />
+          </div>
+          <p className="text-emerald-100 text-sm font-medium">Patrimônio Total</p>
+          <div className="flex items-center gap-3 mt-1 relative z-10">
+            <h2 className="text-4xl font-bold tracking-tight">
+              {showValues ? `R$ ${totalBalance.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}` : "••••••••"}
+            </h2>
+            <button onClick={onToggleValues} className="opacity-80 hover:opacity-100 transition-opacity">
+              {showValues ? <EyeOff size={20} /> : <Eye size={20} />}
+            </button>
+          </div>
+          {totalBalance > 0 && (
+            <div className="mt-2 flex items-center gap-2 text-sm font-bold text-emerald-300">
+              {totalProfit >= 0 ? <TrendingUp size={16} /> : <TrendingDown size={16} />}
+              <span>
+                {showValues ? (<>R$ {Math.abs(totalProfit).toLocaleString("pt-BR", { minimumFractionDigits: 2 })} ({profitPercentage.toFixed(2)}%)</>) : "••••"}
+              </span>
+            </div>
+          )}
+          <button onClick={onAddTransaction} className="mt-6 w-full bg-emerald-500 hover:bg-emerald-400 text-white py-3.5 rounded-xl font-bold flex items-center justify-center gap-2 transition-colors shadow-lg shadow-emerald-900/20">
+            <Plus size={20} /> Novo Aporte
           </button>
         </div>
-        {totalBalance > 0 && (
-          <div className="mt-2 flex items-center gap-2 text-sm font-bold text-emerald-300">
-            {totalProfit >= 0 ? <TrendingUp size={16} /> : <TrendingDown size={16} />}
-            <span>
-              {showValues ? (<>R$ {Math.abs(totalProfit).toLocaleString("pt-BR", { minimumFractionDigits: 2 })} ({profitPercentage.toFixed(2)}%)</>) : "••••"}
-            </span>
-          </div>
-        )}
-        <button onClick={onAddTransaction} className="mt-6 w-full bg-emerald-500 hover:bg-emerald-400 text-white py-3.5 rounded-xl font-bold flex items-center justify-center gap-2 transition-colors shadow-lg shadow-emerald-900/20">
-          <Plus size={20} /> Novo Aporte
-        </button>
-      </div>
+      )}
 
-      {/* 2. IA */}
+      {/* 2. IA (APENAS SE TIVER SALDO) */}
       {totalBalance > 0 && <IA carteira={holdings} />}
 
-      {/* 3. JARDIM CONSCIENTE */}
+      {/* 3. JARDIM CONSCIENTE (APENAS SE TIVER SALDO) */}
       {totalBalance > 0 && (
         <div className="bg-white rounded-3xl p-6 border border-gray-100 shadow-sm">
           <div className="flex justify-between items-start mb-4">
@@ -244,7 +287,7 @@ const HomeTab: React.FC<any> = ({
         </div>
       )}
 
-      {/* 4. INSIGHTS + ESTRATÉGIA */}
+      {/* 4. INSIGHTS + ESTRATÉGIA (SEMPRE VISÍVEL - ORIENTA O INICIANTE) */}
       <div className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden">
         <div className="p-6 border-b border-gray-100 bg-gray-50/50">
           <div className="flex items-center gap-2 mb-2">
@@ -252,7 +295,7 @@ const HomeTab: React.FC<any> = ({
             <h3 className="font-bold text-lg text-gray-900">Insights Conscientes</h3>
           </div>
           <p className="text-sm text-gray-600 leading-relaxed">
-            Com base no seu perfil <strong>{userProfile.riskProfile}</strong> e na sua carteira atual, identificamos onde você deve focar seus próximos passos.
+            Com base no seu perfil <strong>{userProfile.riskProfile}</strong>, identificamos onde você deve focar seus primeiros passos.
           </p>
         </div>
         <div className="p-6">
