@@ -1,7 +1,7 @@
 {
-  "name": "investidor-consciente",
-  "version": "1.0.1",
-  "description": "App de Investimento Consciente",
+  "name": "livo-app",
+  "version": "2.0.0",
+  "description": "Guia de bolso para investir com responsabilidade e consciência",
   "keywords": [
     "react",
     "typescript",
