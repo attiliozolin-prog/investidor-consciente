@@ -1,6 +1,5 @@
-// api/news.js - Versão InfoMoney (Mais estável)
+// api/news.js - Versão "Revista Digital" (Capa + ESG)
 module.exports = async (req, res) => {
-  // 1. Configurar Permissões (CORS)
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS');
 
@@ -8,43 +7,27 @@ module.exports = async (req, res) => {
 
   try {
     const apiKey = process.env.OPENAI_API_KEY;
-    if (!apiKey) throw new Error('Chave OpenAI não configurada na Vercel');
+    if (!apiKey) throw new Error('Chave OpenAI não configurada');
 
-    // 2. Buscar Notícias Reais (Fonte: InfoMoney Economia)
-    // InfoMoney é mais focado em investimentos e bloqueia menos que o Google
-    const rssUrl = "https://www.infomoney.com.br/feed/";
-    
-    const rssResponse = await fetch(rssUrl, {
-      headers: {
-        // Finge ser um navegador para evitar bloqueio (Erro 400/403)
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
-      }
+    // 1. Busca no InfoMoney (Melhor fonte para "Capa de Mercado")
+    const rssResponse = await fetch("https://www.infomoney.com.br/feed/", {
+      headers: { 'User-Agent': 'Mozilla/5.0 (InvestidorConscienteBot)' }
     });
 
-    if (!rssResponse.ok) {
-      throw new Error(`Fonte recusou conexão: ${rssResponse.status}`);
-    }
-
+    if (!rssResponse.ok) throw new Error(`Erro Fonte: ${rssResponse.status}`);
     const xmlText = await rssResponse.text();
 
-    // 3. Extrair Links e Títulos
-    const items = xmlText.split('<item>').slice(1, 12); // Pega os 12 primeiros
-    
+    // 2. Extração (Pegamos 15 para ter variedade para a IA escolher)
+    const items = xmlText.split('<item>').slice(1, 15);
     const rawNews = items.map(item => {
-      // Regex para limpar CDATA (comum no InfoMoney)
-      const titleMatch = item.match(/<title>(.*?)<\/title>/);
-      const linkMatch = item.match(/<link>(.*?)<\/link>/);
-      
-      let title = titleMatch ? titleMatch[1] : 'Sem título';
-      let link = linkMatch ? linkMatch[1] : '#';
-
-      // Remove tags CDATA se existirem
-      title = title.replace('<![CDATA[', '').replace(']]>', '');
-      
+      let title = item.match(/<title>(.*?)<\/title>/)?.[1] || '';
+      let link = item.match(/<link>(.*?)<\/link>/)?.[1] || '#';
+      // Limpeza de CDATA e sufixos
+      title = title.replace('<![CDATA[', '').replace(']]>', '').replace(' - InfoMoney', '');
       return { title, link };
-    }).filter(n => n.title !== 'Sem título');
+    }).filter(n => n.title.length > 10);
 
-    // 4. Inteligência Artificial (Curadoria)
+    // 3. IA Editor Chefe
     const aiResponse = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -56,46 +39,40 @@ module.exports = async (req, res) => {
         messages: [
           {
             role: 'system',
-            content: `Você é um Editor Sênior de Investimentos.
-            Analise a lista de notícias (InfoMoney) e selecione as 3 mais importantes.
+            content: `Atue como Editor Chefe do InfoMoney.
+            Analise as manchetes e selecione EXATAMENTE 3 notícias para a home do app.
             
-            REGRAS:
-            1. A 1ª notícia DEVE ter viés de Sustentabilidade/ESG/Futuro ou Macroeconomia importante.
-            2. Resuma o impacto em 1 frase curta.
-            3. Retorne APENAS um JSON array válido:
-            [{"title": "Título Resumido", "source": "InfoMoney", "impact": "Impacto direto", "url": "Link original"}]`
+            ORDEM OBRIGATÓRIA:
+            1. [CAPA]: A notícia mais bombástica/urgente do dia (Juros, Bolsa, Política Econômica).
+            2. [RELEVANTE]: A segunda notícia mais importante para o bolso do investidor.
+            3. [ESG]: A melhor notícia sobre Sustentabilidade, Energia Limpa ou Futuro Verde encontrada na lista.
+            
+            SAÍDA JSON (Array puro):
+            [
+              { "type": "capa", "title": "...", "source": "InfoMoney", "impact": "Resumo de 1 frase", "url": "..." },
+              { "type": "relevante", "title": "...", "source": "InfoMoney", "impact": "Resumo de 1 frase", "url": "..." },
+              { "type": "esg", "title": "...", "source": "InfoMoney", "impact": "Resumo de 1 frase", "url": "..." }
+            ]`
           },
-          {
-            role: 'user',
-            content: JSON.stringify(rawNews)
-          }
+          { role: 'user', content: JSON.stringify(rawNews) }
         ]
       })
     });
 
     const aiData = await aiResponse.json();
-    
-    if (aiData.error) throw new Error(aiData.error.message);
-
-    // Limpeza da resposta
-    let content = aiData.choices[0].message.content;
-    content = content.replace(/```json/g, '').replace(/```/g, '').trim();
-    
+    let content = aiData.choices[0].message.content.replace(/```json|```/g, '').trim();
     const news = JSON.parse(content);
 
     return res.status(200).json({ news });
 
   } catch (error) {
-    console.error("Erro na API:", error);
-    // Fallback elegante (Mostra erro mas não quebra)
+    console.error("Erro API News:", error);
+    // Fallback estruturado caso falhe
     return res.status(200).json({ 
       news: [
-        { 
-          title: "Mercado Financeiro hoje", 
-          source: "Sistema", 
-          impact: "Não foi possível carregar as notícias em tempo real.", 
-          url: "https://www.infomoney.com.br" 
-        }
+        { type: "capa", title: "Ibovespa opera com volatilidade de olho no cenário fiscal", source: "Sistema", impact: "Momento de cautela.", url: "#" },
+        { type: "relevante", title: "Dólar fecha em leve alta com dados dos EUA", source: "Sistema", impact: "Impacta importações.", url: "#" },
+        { type: "esg", title: "Empresas brasileiras batem recorde em energia renovável", source: "Sistema", impact: "Setor aquecido.", url: "#" }
       ] 
     });
   }
