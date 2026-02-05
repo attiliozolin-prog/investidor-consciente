@@ -1,5 +1,5 @@
 // ================================
-// TIPOS GLOBAIS DO INVESTIDOR CONSCIENTE
+// TIPOS GLOBAIS DO INVESTIDOR CONSCIENTE (LIVO)
 // ================================
 
 // --------------------------------
@@ -31,13 +31,21 @@ export interface UserProfile {
   // Peso de importância ESG (0.0 a 1.0)
   esgImportance: number;
 
-  riskProfile: RiskProfile | null;
+  // ATUALIZADO: Aceita os perfis padrão OU "Personalizado"
+  riskProfile: RiskProfile | "Personalizado" | null;
 
   // Define se o onboarding já foi concluído
   isOnboardingComplete: boolean;
 
   // Nível de experiência do usuário com investimentos
   experienceLevel?: "iniciante" | "intermediario" | "avancado";
+
+  // NOVO: Metas personalizadas de alocação (se riskProfile for "Personalizado")
+  customTargets?: {
+    fixed_income: number; // Ex: 40 para 40%
+    fii: number;
+    stock: number;
+  };
 }
 
 // --------------------------------
