@@ -122,7 +122,7 @@ const PortfolioDashboard: React.FC<any> = ({
 
     let targets = { fixed_income: 40, fii: 30, stock: 30 };
     if (userProfile.riskProfile === "Conservador") targets = { fixed_income: 80, fii: 15, stock: 5 };
-    if (userProfile.riskProfile === "Arrojado") targets = { fixed_income: 20, fii: 40, stock: 40 };
+    if (userProfile.riskProfile === "Arrojado") targets = { fixed_income: 20, fii: 35, stock: 45 };
 
     return Object.keys(groups).map((key) => {
       const k = key as keyof typeof groups;
