@@ -14,7 +14,6 @@ import {
   HelpCircle,
   Search,
   CheckCircle2,
-  ArrowRight,
   RefreshCw,
   Zap,
   Sparkles,
@@ -157,17 +156,22 @@ const HomeTab: React.FC<any> = ({
 
   const coherenceStatus = getCoherenceStatus(coherenceScore);
 
-REBALANCEAMENTO (Lógica Atualizada Livo)
+  /* =======================
+     REBALANCEAMENTO (Lógica Atualizada Livo)
   ======================= */
   const rebalancingStrategy = useMemo(() => {
+    // 1. Definição das Metas (Targets) em Decimal
+    // Moderado (Padrão): 40% RF, 30% FII, 30% Ações
     const target = { fixed_income: 0.4, fii: 0.3, stock: 0.3 };
 
     if (userProfile.riskProfile === "Conservador") {
+      // Conservador: 80% RF, 15% FII, 5% Ações (Foco total em segurança)
       target.fixed_income = 0.8; target.fii = 0.15; target.stock = 0.05;
     } else if (userProfile.riskProfile === "Arrojado") {
+      // Arrojado: 20% RF, 35% FII, 45% Ações (Foco em crescimento)
       target.fixed_income = 0.2; target.fii = 0.35; target.stock = 0.45;
     }
-    
+
     const currentSums = { fixed_income: 0, fii: 0, stock: 0, total: 0 };
     holdings.forEach((h: Holding) => {
       if (h.assetType === "fixed_income") currentSums.fixed_income += h.totalValue;
