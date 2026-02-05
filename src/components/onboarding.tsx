@@ -49,18 +49,18 @@ export default function Onboarding({ onComplete }: Props) {
             </div>
             
             <h1 className="text-3xl font-bold text-gray-900 text-center">
-              Olá, somos a Livo.
+              Bem vindo(a) a Livo.
             </h1>
 
             <div className="space-y-4 text-gray-600 leading-relaxed text-center">
               <p>
-                Acreditamos que o dinheiro deve servir à vida, e não o contrário.
+               Um guia de bolso para investir com responsabilidade, consciência e tranquilidade.
               </p>
               <p>
                 <strong>Não somos um banco nem uma corretora.</strong>
               </p>
               <p>
-                Somos seu guia de bolso para investir com calma, responsabilidade e consciência.
+               Com a Livo, você aprende mais sobre investimentos, monta a sua carteira equilibrada e monitona onde seu dinheiro está.
               </p>
             </div>
 
@@ -81,7 +81,7 @@ export default function Onboarding({ onComplete }: Props) {
             </h2>
 
             <p className="text-sm text-gray-500">
-              Não existe resposta errada. Queremos apenas adaptar nossa linguagem a você.
+              Queremos adaptar nossa linguagem a você.
             </p>
 
             <button
@@ -142,7 +142,7 @@ export default function Onboarding({ onComplete }: Props) {
         {step === 4 && (
           <div className="space-y-6 animate-in fade-in">
             <h2 className="text-2xl font-bold text-gray-900">
-              Como você prefere caminhar?
+              Como você prefere seguir em sua jornada de investimentos?
             </h2>
 
             <button
@@ -203,7 +203,7 @@ export default function Onboarding({ onComplete }: Props) {
             </h2>
 
             <p className="text-sm text-gray-600">
-              Na Livo, o impacto ambiental e social das empresas importa tanto quanto o lucro. Quanto isso pesa para você?
+              A Livo te ajuda a equilibrar rendimentos com responsabilidade social e ambiental.
             </p>
 
             <div className="bg-gray-50 p-6 rounded-2xl space-y-4 border border-gray-100">
