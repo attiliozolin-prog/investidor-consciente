@@ -60,7 +60,7 @@ export default function Onboarding({ onComplete }: Props) {
                 <strong>Não somos um banco nem uma corretora.</strong>
               </p>
               <p>
-               Com a Livo, você aprende mais sobre investimentos, monta a sua carteira equilibrada e monitona onde seu dinheiro está aplicado.
+               Com a Livo, você aprende mais sobre investimentos, monta a sua carteira equilibrada e monitora onde seu dinheiro está aplicado.
               </p>
             </div>
 
@@ -199,7 +199,7 @@ export default function Onboarding({ onComplete }: Props) {
         {step === 5 && (
           <div className="space-y-6 animate-in fade-in">
             <h2 className="text-2xl font-bold text-gray-900">
-              Investa com consciência e responsabilidade
+              Invista com consciência e responsabilidade
             </h2>
 
             <p className="text-sm text-gray-600">
