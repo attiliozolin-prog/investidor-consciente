@@ -17,6 +17,7 @@ import {
   Search,
   CheckCircle2,
   ArrowRight,
+  AlertTriangle,
 } from "lucide-react";
 
 import { Holding } from "../../../types";
@@ -48,30 +49,39 @@ const STRATEGY_CONTENT = {
     color: "bg-blue-50 text-blue-900 border-blue-100",
     barColor: "bg-blue-500",
     whatIs: "Empréstimo para bancos ou governo em troca de juros seguros.",
-    why: "Sua carteira precisa de mais estabilidade para proteger seu patrimônio de oscilações bruscas.",
-    howToFind: "No app da corretora, busque por: Tesouro Selic, CDB ou LCI/LCA.",
-    howToDecide: "Para reserva: Tesouro Selic. Para render mais: CDBs que paguem acima de 100% do CDI.",
+    why: "Sua carteira precisa de estabilidade para proteger seu patrimônio.",
+    howToFind: "Busque por: Tesouro Selic, CDB ou LCI/LCA.",
+    howToDecide: "Reserva? Tesouro Selic. Rentabilidade? CDB > 100% CDI.",
   },
   fii: {
     title: "Fundos Imobiliários",
     icon: <Building2 size={32} className="text-orange-600" />,
     color: "bg-orange-50 text-orange-900 border-orange-100",
     barColor: "bg-orange-500",
-    whatIs: "Você vira 'dono' de pedacinhos de grandes imóveis (shoppings, galpões) e recebe aluguéis mensais.",
-    why: "Ideal para gerar 'renda passiva' (dinheiro caindo na conta todo mês) isenta de Imposto de Renda.",
-    howToFind: "Na busca da corretora, digite códigos com final 11 (Ex: HGLG11, KNRI11).",
-    howToDecide: "Prefira fundos de 'Tijolo' (imóveis reais) com muitos inquilinos e imóveis de qualidade.",
+    whatIs: "Você vira dono de pedaços de imóveis e recebe aluguéis mensais.",
+    why: "Gera renda passiva mensal isenta de IR na sua conta.",
+    howToFind: "Busque códigos com final 11 (Ex: HGLG11, KNRI11).",
+    howToDecide: "Prefira fundos de 'Tijolo' com imóveis de qualidade.",
   },
   stock: {
     title: "Ações",
     icon: <TrendingUp size={32} className="text-emerald-600" />,
     color: "bg-emerald-50 text-emerald-900 border-emerald-100",
     barColor: "bg-emerald-500",
-    whatIs: "Pedaços de empresas reais. Você vira sócio e lucra com o crescimento do negócio.",
-    why: "Necessário para seu dinheiro crescer acima da inflação no longo prazo, apesar do risco maior.",
-    howToFind: "Busque códigos de 4 letras (Ex: WEG3, ITUB4, VALE3).",
-    howToDecide: "Busque empresas líderes, com lucros crescentes e, de preferência, boas notas ESG.",
+    whatIs: "Você vira sócio de empresas reais e lucra com o crescimento.",
+    why: "Essencial para bater a inflação no longo prazo.",
+    howToFind: "Busque códigos de 4 letras (Ex: WEG3, ITUB4).",
+    howToDecide: "Busque líderes de setor, lucros crescentes e bom ESG.",
   },
+};
+
+/* =======================
+   HELPER: COERÊNCIA (COR E TEXTO)
+======================= */
+const getCoherenceStatus = (score: number) => {
+  if (score >= 80) return { color: "bg-emerald-500", text: "Excelente Equilíbrio", textClass: "text-emerald-700" };
+  if (score >= 50) return { color: "bg-yellow-500", text: "Equilíbrio Moderado", textClass: "text-yellow-700" };
+  return { color: "bg-red-500", text: "Precisa de Atenção", textClass: "text-red-700" };
 };
 
 /* =======================
@@ -99,47 +109,36 @@ const HomeTab: React.FC<any> = ({
   );
 
   const totalInvested = totalBalance - totalProfit;
-
-  const profitPercentage =
-    totalInvested > 0 ? (totalProfit / totalInvested) * 100 : 0;
+  const profitPercentage = totalInvested > 0 ? (totalProfit / totalInvested) * 100 : 0;
 
   /* =======================
      COERÊNCIA
   ======================= */
   const coherenceScore = useMemo(() => {
     if (totalBalance === 0) return 0;
-
     let weightedScoreSum = 0;
-
     holdings.forEach((h: Holding) => {
-      const stockRank = rankedStocks.find(
-        (r: any) => r.ticker === h.ticker
-      );
+      const stockRank = rankedStocks.find((r: any) => r.ticker === h.ticker);
       const score = stockRank ? stockRank.coherenceScore : 50;
       weightedScoreSum += score * h.totalValue;
     });
-
     return Math.round(weightedScoreSum / totalBalance);
   }, [holdings, rankedStocks, totalBalance]);
 
+  const coherenceStatus = getCoherenceStatus(coherenceScore);
+
   /* =======================
-     REBALANCEAMENTO (CÁLCULO DA ESTRATÉGIA)
+     REBALANCEAMENTO (CÁLCULO)
   ======================= */
   const rebalancingStrategy = useMemo(() => {
-    // 1. Define metas baseadas no perfil
     const target = { fixed_income: 0.3, fii: 0.4, stock: 0.3 };
 
     if (userProfile.riskProfile === "Conservador") {
-      target.fixed_income = 0.6;
-      target.fii = 0.2;
-      target.stock = 0.2;
+      target.fixed_income = 0.6; target.fii = 0.2; target.stock = 0.2;
     } else if (userProfile.riskProfile === "Arrojado") {
-      target.fixed_income = 0.1;
-      target.fii = 0.4;
-      target.stock = 0.5;
+      target.fixed_income = 0.1; target.fii = 0.4; target.stock = 0.5;
     }
 
-    // 2. Calcula alocação atual
     const currentSums = { fixed_income: 0, fii: 0, stock: 0, total: 0 };
     holdings.forEach((h: Holding) => {
       if (h.assetType === "fixed_income") currentSums.fixed_income += h.totalValue;
@@ -155,7 +154,6 @@ const HomeTab: React.FC<any> = ({
       stock: currentSums.stock / totalCalc,
     };
 
-    // 3. Encontra onde falta mais dinheiro (maior gap)
     const gaps = {
       fixed_income: target.fixed_income - current.fixed_income,
       fii: target.fii - current.fii,
@@ -185,7 +183,8 @@ const HomeTab: React.FC<any> = ({
   ======================= */
   return (
     <div className="space-y-6 pb-32 animate-in fade-in">
-      {/* CARD 1: PATRIMÔNIO (Mantido igual) */}
+      
+      {/* 1. PATRIMÔNIO */}
       <div className="bg-emerald-900 text-white rounded-3xl p-6 shadow-xl relative overflow-hidden">
         <div className="absolute top-0 right-0 opacity-10 transform translate-x-1/4 -translate-y-1/4">
           <Leaf size={200} />
@@ -219,30 +218,45 @@ const HomeTab: React.FC<any> = ({
         </button>
       </div>
 
-      {/* IA */}
+      {/* 2. IA (Consultor) */}
       {totalBalance > 0 && <IA carteira={holdings} />}
 
-      {/* COERÊNCIA */}
+      {/* 3. JARDIM CONSCIENTE (AGORA COM BARRA COLORIDA) */}
       {totalBalance > 0 && (
-        <div className="bg-white rounded-3xl p-6 border border-gray-100 shadow-sm flex justify-between items-center">
-          <div>
-            <h3 className="font-bold text-gray-900 text-lg">Jardim Consciente</h3>
-            <p className="text-xs text-gray-500 mt-1 max-w-[200px]">
-              O equilíbrio entre retorno e seus valores pessoais.
-            </p>
-          </div>
-          <div className="flex flex-col items-center">
-             <div className="w-16 h-16 flex items-center justify-center rounded-2xl bg-emerald-50 text-emerald-600 mb-1">
-              {coherenceScore > 90 ? <TreeDeciduous size={32} /> : coherenceScore > 50 ? <Leaf size={28} /> : <Sprout size={28} />}
+        <div className="bg-white rounded-3xl p-6 border border-gray-100 shadow-sm">
+          <div className="flex justify-between items-start mb-4">
+            <div>
+              <h3 className="font-bold text-gray-900 text-lg flex items-center gap-2">
+                <Leaf className="text-emerald-600" size={20} />
+                Jardim Consciente
+              </h3>
+              <p className="text-xs text-gray-500 mt-1">
+                Alinhamento com seus valores ({userProfile.riskProfile})
+              </p>
             </div>
-            <span className="font-bold text-xl text-emerald-700">{coherenceScore}%</span>
+            <div className="flex flex-col items-end">
+              <span className="font-bold text-3xl text-gray-900">{coherenceScore}%</span>
+            </div>
+          </div>
+
+          {/* A BARRA DE PROGRESSO COLORIDA */}
+          <div className="relative h-4 bg-gray-100 rounded-full overflow-hidden mb-2">
+            <div 
+              className={`absolute top-0 left-0 h-full ${coherenceStatus.color} transition-all duration-1000 ease-out`}
+              style={{ width: `${coherenceScore}%` }}
+            />
+          </div>
+          
+          <div className="flex justify-between items-center text-xs font-medium">
+             <span className={`${coherenceStatus.textClass} font-bold`}>
+               {coherenceStatus.text}
+             </span>
+             <span className="text-gray-400">Meta: 100%</span>
           </div>
         </div>
       )}
 
-      {/* =======================================================
-          NOVO CARD UNIFICADO: INSIGHTS + ESTRATÉGIA + BARRA
-      ======================================================= */}
+      {/* 4. INSIGHTS + ESTRATÉGIA UNIFICADOS */}
       <div className="bg-white rounded-3xl border border-gray-200 shadow-sm overflow-hidden">
         
         {/* CABEÇALHO UNIFICADO */}
@@ -250,12 +264,11 @@ const HomeTab: React.FC<any> = ({
           <div className="flex items-center gap-2 mb-2">
             <Target className="text-emerald-600" size={20} />
             <h3 className="font-bold text-lg text-gray-900">
-              Insights para decisões mais conscientes
+              Insights Conscientes
             </h3>
           </div>
           <p className="text-sm text-gray-600 leading-relaxed">
-            Essas análises ajudam você a entender o equilíbrio da sua carteira. 
-            De acordo com seu perfil <strong>{userProfile.riskProfile}</strong>, esse deve ser o foco de seus próximos investimentos.
+            Análise baseada no seu perfil <strong>{userProfile.riskProfile}</strong>.
           </p>
         </div>
 
@@ -263,82 +276,63 @@ const HomeTab: React.FC<any> = ({
         <div className="p-6">
           <div className="mb-6">
             <span className="text-xs font-bold text-gray-400 uppercase tracking-wider flex items-center gap-1">
-              <ArrowRight size={12} /> Estratégia do Mês
+              <ArrowRight size={12} /> Foco do Mês
             </span>
             
             <div className="flex items-center gap-4 mt-3 mb-4">
-               {/* ÍCONE GRANDE */}
                <div className={`w-14 h-14 rounded-2xl flex items-center justify-center shadow-sm ${rebalancingStrategy.content.color}`}>
                  {rebalancingStrategy.content.icon}
                </div>
                
                <div>
-                 <p className="text-sm text-gray-500">Oportunidade de aporte em:</p>
+                 <p className="text-sm text-gray-500">Recomendamos aportar em:</p>
                  <h4 className="text-xl font-bold text-gray-900 leading-tight">
                    {rebalancingStrategy.content.title}
                  </h4>
                </div>
             </div>
 
-            {/* BARRA DE PROGRESSO (A VOLTA DA BARRA COLORIDA) */}
-            <div className="bg-gray-100 rounded-full h-4 w-full overflow-hidden relative">
-              {/* Barra de preenchimento atual */}
+            {/* BARRA DE ALOCAÇÃO (ALVO VS ATUAL) */}
+            <div className="bg-gray-100 rounded-full h-3 w-full overflow-hidden relative">
               <div 
-                className={`h-full ${rebalancingStrategy.content.barColor} transition-all duration-1000 ease-out`}
+                className={`h-full ${rebalancingStrategy.content.barColor} opacity-50`}
                 style={{ width: `${Math.min(rebalancingStrategy.currentPct, 100)}%` }}
               />
-              {/* Marcador de Meta (Target) */}
               <div 
-                className="absolute top-0 bottom-0 w-1 bg-black/20"
+                className="absolute top-0 bottom-0 w-1 bg-black/30 z-10"
                 style={{ left: `${Math.min(rebalancingStrategy.targetPct, 100)}%` }}
               />
             </div>
-            <div className="flex justify-between text-xs font-medium text-gray-500 mt-2">
+            <div className="flex justify-between text-[10px] font-bold text-gray-500 mt-1 uppercase tracking-wide">
               <span>Atual: {rebalancingStrategy.currentPct.toFixed(0)}%</span>
               <span>Ideal: {rebalancingStrategy.targetPct.toFixed(0)}%</span>
             </div>
           </div>
 
-          {/* SESSÃO EDUCATIVA (CARDS LATERAIS) */}
+          {/* SESSÃO EDUCATIVA */}
           <div className="grid gap-3">
-            
-            <div className="bg-gray-50 p-4 rounded-xl border border-gray-100 hover:border-emerald-200 transition-colors">
-              <div className="flex items-center gap-2 mb-2 text-gray-800 font-bold text-sm">
-                <HelpCircle size={16} className="text-gray-400" /> O que são?
+            <div className="bg-gray-50 p-4 rounded-xl border border-gray-100">
+              <div className="flex items-center gap-2 mb-1 text-gray-900 font-bold text-xs uppercase">
+                <HelpCircle size={14} className="text-gray-400" /> O que são?
               </div>
-              <p className="text-sm text-gray-600 leading-relaxed">{rebalancingStrategy.content.whatIs}</p>
+              <p className="text-sm text-gray-600">{rebalancingStrategy.content.whatIs}</p>
             </div>
 
-            <div className="bg-gray-50 p-4 rounded-xl border border-gray-100 hover:border-emerald-200 transition-colors">
-              <div className="flex items-center gap-2 mb-2 text-gray-800 font-bold text-sm">
-                <CheckCircle2 size={16} className="text-emerald-500" /> Por que faz sentido?
+            <div className="bg-gray-50 p-4 rounded-xl border border-gray-100">
+              <div className="flex items-center gap-2 mb-1 text-gray-900 font-bold text-xs uppercase">
+                <CheckCircle2 size={14} className="text-emerald-500" /> Por que agora?
               </div>
-              <p className="text-sm text-gray-600 leading-relaxed">{rebalancingStrategy.content.why}</p>
+              <p className="text-sm text-gray-600">{rebalancingStrategy.content.why}</p>
             </div>
-
-             <div className="bg-gray-50 p-4 rounded-xl border border-gray-100 hover:border-emerald-200 transition-colors">
-              <div className="flex items-center gap-2 mb-2 text-gray-800 font-bold text-sm">
-                <Search size={16} className="text-blue-500" /> Como encontrar?
-              </div>
-              <p className="text-sm text-gray-600 leading-relaxed">{rebalancingStrategy.content.howToFind}</p>
-            </div>
-
-             <div className="bg-gray-50 p-4 rounded-xl border border-gray-100 hover:border-emerald-200 transition-colors">
-              <div className="flex items-center gap-2 mb-2 text-gray-800 font-bold text-sm">
-                <Target size={16} className="text-orange-500" /> Como decidir?
-              </div>
-              <p className="text-sm text-gray-600 leading-relaxed">{rebalancingStrategy.content.howToDecide}</p>
-            </div>
-
           </div>
         </div>
       </div>
 
-      {/* NEWS */}
+      {/* 5. NEWS */}
       <div className="bg-white rounded-3xl p-6 border border-gray-100 shadow-sm">
         <div className="flex items-center gap-2 mb-4">
           <Newspaper className="text-emerald-500" />
-          <h3 className="font-bold text-gray-900">Notícias do Setor</h3>
+          <h3 className="font-bold text-gray-900">Notícias</h3>
         </div>
 
         {MOCK_NEWS.map((news, idx) => (
