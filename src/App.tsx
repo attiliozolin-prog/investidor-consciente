@@ -7,31 +7,22 @@ import {
   Home,
 } from "lucide-react";
 
-// --- COMPONENTES ---
 import Onboarding from "./components/onboarding";
 import AddTransactionModal from "./components/modals/AddTransactionModal";
 import StockModal from "./components/modals/StockModal";
 import HomeTab from "./components/layout/tabs/HomeTab";
 import PortfolioDashboard from "./components/layout/tabs/PortfolioDashboard";
-
-// --- DADOS E TIPOS (Conexão Correta) ---
-import { STOCKS_DB } from "./data/stocks"; // Agora usa a base oficial
-import { 
-  Transaction, 
-  Holding, 
-  UserProfile, 
-  InvestmentGoal, 
-  RiskProfile 
-} from "./types"; // Tipos centralizados
-
-// ==========================================
-// MAIN APP COMPONENT
-// ==========================================
+import { Transaction, Holding, UserProfile, InvestmentGoal, RiskProfile } from "./types";
+import { STOCKS_DB } from "./data/stocks";
 
 export default function App() {
   const [activeTab, setActiveTab] = useState("home");
   const [showValues, setShowValues] = useState(true);
+  
+  // -- CONTROLE DO MODAL DE TRANSAÇÃO --
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [transactionModalType, setTransactionModalType] = useState<"BUY" | "SELL">("BUY");
+  
   const [selectedStockTicker, setSelectedStockTicker] = useState<string | null>(null);
 
   // State: Profile
@@ -49,10 +40,9 @@ export default function App() {
     return saved ? JSON.parse(saved) : [];
   });
 
-  // Derived: Holdings (Cálculo da Carteira)
+  // Derived: Holdings
   const holdings = useMemo(() => {
     const map = new Map<string, { qty: number; totalCost: number }>();
-    
     transactions.forEach((t) => {
       const current = map.get(t.ticker) || { qty: 0, totalCost: 0 };
       if (t.type === "BUY") {
@@ -68,41 +58,37 @@ export default function App() {
         });
       }
     });
-
     const result: Holding[] = [];
-    
     map.forEach((value, ticker) => {
-      // Ignora se quantidade for zero ou menor, a menos que haja custo residual (lucro/prejuízo realizado)
-      // Simplificação: mostra apenas ativos com quantidade > 0 na lista principal
-      if (value.qty > 0) {
+      // Simplificação para exibição
+      if (value.qty > 0 || (value.qty === 0 && value.totalCost > 0)) {
+        if (value.qty <= 0 && value.totalCost <= 0) return;
         const stock = STOCKS_DB.find((s) => s.ticker === ticker);
         const currentPrice = stock ? stock.price : 0;
+        const totalValue =
+          stock?.assetType === "fixed_income"
+            ? value.totalCost
+            : value.qty * currentPrice;
+            
+        const avgPrice = value.qty > 0 ? value.totalCost / value.qty : 0;
         
-        // Renda Fixa assume preço = custo (simplificação) ou preço atual se disponível
-        const finalPrice = stock?.assetType === "fixed_income" 
-          ? (value.qty > 0 ? value.totalCost / value.qty : 0) // Preço médio para RF
-          : currentPrice;
-
-        const totalValue = value.qty * finalPrice;
-
         result.push({
           ticker,
           assetType: stock?.assetType || "stock",
           quantity: value.qty,
-          averagePrice: value.qty > 0 ? value.totalCost / value.qty : 0,
-          currentPrice: finalPrice,
+          averagePrice: avgPrice,
+          currentPrice: stock?.assetType === "fixed_income" ? avgPrice : currentPrice,
           totalValue,
           profit: totalValue - value.totalCost,
-          profitPercent: 0, // Pode calcular se desejar
-          allocationPercent: 0, // Será calculado no dashboard se necessário
+          profitPercent: 0,
+          allocationPercent: 0,
         });
       }
     });
-    
     return result;
   }, [transactions]);
 
-  // Derived: Ranked Stocks (Ranking de Coerência)
+  // Derived: Ranked Stocks
   const rankedStocks = useMemo(() => {
     return STOCKS_DB.map((stock) => {
       const esgWeight = userProfile.esgImportance;
@@ -113,10 +99,11 @@ export default function App() {
     }).sort((a, b) => b.coherenceScore - a.coherenceScore);
   }, [userProfile]);
 
-  // Handlers
   const handleAddTransaction = (t: Omit<Transaction, "id">) => {
-    const newTransaction = { ...t, id: Math.random().toString(36).substr(2, 9) };
-    const updated = [...transactions, newTransaction];
+    const updated = [
+      ...transactions,
+      { ...t, id: Math.random().toString(36).substr(2, 9) },
+    ];
     setTransactions(updated);
     localStorage.setItem("transactions", JSON.stringify(updated));
   };
@@ -129,14 +116,29 @@ export default function App() {
     }
   };
 
-  // --- RENDER ---
+  // -- HANDLERS DE ABERTURA DE MODAL --
+  const openBuyModal = () => {
+    setTransactionModalType("BUY");
+    setIsAddModalOpen(true);
+  };
+
+  const openSellModal = () => {
+    setTransactionModalType("SELL");
+    setIsAddModalOpen(true);
+  };
+  
+  // -- HANDLER DE RECALIBRAR PERFIL --
+  const handleRetakeOnboarding = () => {
+    if(window.confirm("Deseja refazer o teste de perfil? Seus investimentos serão mantidos, mas as metas serão atualizadas.")) {
+       setUserProfile(prev => ({ ...prev, isOnboardingComplete: false }));
+    }
+  };
 
   if (!userProfile.isOnboardingComplete)
     return <Onboarding onComplete={setUserProfile} />;
 
   return (
     <div className="max-w-5xl mx-auto bg-[#F9FAFB] min-h-screen relative shadow-2xl border-x border-gray-200">
-      {/* HEADER FIXO */}
       <header className="px-6 pt-12 pb-4 flex justify-between items-center bg-white sticky top-0 z-20 border-b border-gray-100">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 bg-emerald-100 rounded-full flex items-center justify-center">
@@ -151,47 +153,46 @@ export default function App() {
         </div>
         <button
           onClick={() => {
-            if (window.confirm("Resetar o App? Isso apagará todos os seus dados.")) {
+            if (window.confirm("Resetar TUDO (incluindo carteira)? Essa ação é irreversível.")) {
               localStorage.clear();
               window.location.reload();
             }
           }}
-          className="text-xs font-bold text-red-600 bg-red-100 px-3 py-2 rounded-md hover:bg-red-200 transition-colors"
+          className="text-xs font-bold text-red-600 bg-red-50 px-3 py-2 rounded-md hover:bg-red-100 transition-colors"
         >
-          Resetar
+          Resetar App
         </button>
       </header>
 
-      {/* CONTEÚDO PRINCIPAL */}
       <main className="p-6">
         {activeTab === "home" && (
           <HomeTab
             userProfile={userProfile}
             transactions={transactions}
-            onAddTransaction={() => setIsAddModalOpen(true)}
+            onAddTransaction={openBuyModal}
             showValues={showValues}
             onToggleValues={() => setShowValues(!showValues)}
             holdings={holdings}
             rankedStocks={rankedStocks}
           />
         )}
-        
         {activeTab === "portfolio" && (
           <PortfolioDashboard
             userProfile={userProfile}
             transactions={transactions}
-            onAddTransaction={() => setIsAddModalOpen(true)}
+            onAddTransaction={openBuyModal}     // Botão Verde (+)
+            onSellTransaction={openSellModal}   // Botão Vermelho (-)
+            onRetakeOnboarding={handleRetakeOnboarding} // Botão Recalibrar
             onDeleteAsset={handleDeleteAsset}
             onDeleteTransaction={(id: string) => {
-              const updated = transactions.filter((t) => t.id !== id);
-              setTransactions(updated);
-              localStorage.setItem("transactions", JSON.stringify(updated));
+               const updated = transactions.filter((t) => t.id !== id);
+               setTransactions(updated);
+               localStorage.setItem("transactions", JSON.stringify(updated));
             }}
             rankedStocks={rankedStocks}
             showValues={showValues}
           />
         )}
-        
         {activeTab === "market" && (
           <div className="space-y-4 pb-32">
             <div className="bg-white p-4 rounded-2xl border border-gray-100 flex gap-2">
@@ -235,7 +236,6 @@ export default function App() {
         )}
       </main>
 
-      {/* NAVBAR NAVEGAÇÃO */}
       <nav className="fixed bottom-6 left-1/2 -translate-x-1/2 bg-gray-900 text-white px-6 py-4 rounded-full shadow-2xl flex items-center gap-8 z-30">
         <button
           onClick={() => setActiveTab("home")}
@@ -272,12 +272,12 @@ export default function App() {
         </button>
       </nav>
 
-      {/* MODAIS */}
       {isAddModalOpen && (
         <AddTransactionModal
-          stocks={STOCKS_DB} // Agora usa a base importada
+          stocks={STOCKS_DB}
           onClose={() => setIsAddModalOpen(false)}
           onSave={handleAddTransaction}
+          initialType={transactionModalType} // Passa se é Compra ou Venda
         />
       )}
       
