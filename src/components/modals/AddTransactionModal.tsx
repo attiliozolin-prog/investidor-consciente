@@ -6,15 +6,17 @@ interface Props {
   stocks: StockData[];
   onClose: () => void;
   onSave: (t: Omit<Transaction, "id">) => void;
+  initialType?: "BUY" | "SELL"; // Nova prop opcional
 }
 
 const AddTransactionModal: React.FC<Props> = ({
   stocks,
   onClose,
   onSave,
+  initialType = "BUY", // Padrão é compra
 }) => {
   const [ticker, setTicker] = useState(stocks[0]?.ticker || "");
-  const [type, setType] = useState<"BUY" | "SELL">("BUY");
+  const [type, setType] = useState<"BUY" | "SELL">(initialType); // Usa o valor inicial
   const [quantity, setQuantity] = useState("");
   const [price, setPrice] = useState("");
   const [date, setDate] = useState(
@@ -53,7 +55,9 @@ const AddTransactionModal: React.FC<Props> = ({
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/60 backdrop-blur-sm animate-in fade-in">
       <div className="bg-white rounded-3xl w-full max-w-md shadow-2xl overflow-hidden">
         <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50">
-          <h2 className="font-bold text-gray-900">Nova Movimentação</h2>
+          <h2 className="font-bold text-gray-900">
+            {type === "BUY" ? "Novo Aporte" : "Realizar Resgate/Venda"}
+          </h2>
           <button
             onClick={onClose}
             className="p-2 hover:bg-gray-200 rounded-full transition-colors"
@@ -67,10 +71,10 @@ const AddTransactionModal: React.FC<Props> = ({
             <button
               type="button"
               onClick={() => setType("BUY")}
-              className={`flex-1 py-2 rounded-lg text-sm font-semibold ${
+              className={`flex-1 py-2 rounded-lg text-sm font-semibold transition-all ${
                 type === "BUY"
                   ? "bg-white text-emerald-600 shadow-sm"
-                  : "text-gray-500"
+                  : "text-gray-500 hover:text-gray-700"
               }`}
             >
               Compra
@@ -78,40 +82,43 @@ const AddTransactionModal: React.FC<Props> = ({
             <button
               type="button"
               onClick={() => setType("SELL")}
-              className={`flex-1 py-2 rounded-lg text-sm font-semibold ${
+              className={`flex-1 py-2 rounded-lg text-sm font-semibold transition-all ${
                 type === "SELL"
                   ? "bg-white text-red-600 shadow-sm"
-                  : "text-gray-500"
+                  : "text-gray-500 hover:text-gray-700"
               }`}
             >
               Venda
             </button>
           </div>
 
-          <select
-            value={ticker}
-            onChange={(e) => setTicker(e.target.value)}
-            className="w-full p-3 border rounded-xl"
-          >
-            {stocks.map((s) => (
-              <option key={s.ticker} value={s.ticker}>
-                {s.ticker} — {s.name}
-              </option>
-            ))}
-          </select>
+          <div className="space-y-1">
+            <label className="text-xs font-bold text-gray-500 ml-1">Ativo</label>
+            <select
+              value={ticker}
+              onChange={(e) => setTicker(e.target.value)}
+              className="w-full p-3 border border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-emerald-500 outline-none"
+            >
+              {stocks.map((s) => (
+                <option key={s.ticker} value={s.ticker}>
+                  {s.ticker} — {s.name}
+                </option>
+              ))}
+            </select>
+          </div>
 
           {!isFixedIncome && (
             <div className="relative">
               <Hash
                 size={16}
-                className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500"
+                className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
               />
               <input
                 type="number"
                 value={quantity}
                 onChange={(e) => setQuantity(e.target.value)}
                 placeholder="Quantidade"
-                className="w-full pl-9 p-3 border rounded-xl"
+                className="w-full pl-9 p-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none"
                 required
               />
             </div>
@@ -120,15 +127,15 @@ const AddTransactionModal: React.FC<Props> = ({
           <div className="relative">
             <DollarSign
               size={16}
-              className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500"
+              className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
             />
             <input
               type="number"
               step="0.01"
               value={price}
               onChange={(e) => setPrice(e.target.value)}
-              placeholder="Valor"
-              className="w-full pl-9 p-3 border rounded-xl"
+              placeholder="Valor Unitário"
+              className="w-full pl-9 p-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none"
               required
             />
           </div>
@@ -136,22 +143,26 @@ const AddTransactionModal: React.FC<Props> = ({
           <div className="relative">
             <Calendar
               size={16}
-              className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500"
+              className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
             />
             <input
               type="date"
               value={date}
               onChange={(e) => setDate(e.target.value)}
-              className="w-full pl-9 p-3 border rounded-xl"
+              className="w-full pl-9 p-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none"
               required
             />
           </div>
 
           <button
             type="submit"
-            className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-4 rounded-xl"
+            className={`w-full font-bold py-4 rounded-xl text-white transition-all shadow-lg ${
+              type === "BUY"
+                ? "bg-emerald-600 hover:bg-emerald-700 shadow-emerald-200"
+                : "bg-red-600 hover:bg-red-700 shadow-red-200"
+            }`}
           >
-            Confirmar
+            Confirmar {type === "BUY" ? "Aporte" : "Resgate"}
           </button>
         </form>
       </div>
