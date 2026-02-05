@@ -17,7 +17,7 @@ import {
   Search,
   CheckCircle2,
   ArrowRight,
-  RefreshCw, // Ícone novo para loading
+  RefreshCw,
 } from "lucide-react";
 
 import { Holding } from "../../../types";
@@ -30,6 +30,7 @@ interface NewsItem {
   title: string;
   source: string;
   impact: string;
+  url: string;
 }
 
 /* =======================
@@ -75,7 +76,7 @@ const getCoherenceStatus = (score: number) => {
 };
 
 /* =======================
-   COMPONENT
+   COMPONENT PRINCIPAL
 ======================= */
 const HomeTab: React.FC<any> = ({
   userProfile,
@@ -94,20 +95,17 @@ const HomeTab: React.FC<any> = ({
   useEffect(() => {
     async function fetchNews() {
       try {
-        // Chama nossa nova API
         const res = await fetch('/api/news');
         const data = await res.json();
-        if (data.news) {
+        if (data.news && Array.isArray(data.news)) {
           setRealNews(data.news);
         }
       } catch (error) {
         console.error("Falha ao carregar notícias", error);
-        // Fallback silencioso (mantém vazio ou mostra erro se preferir)
       } finally {
         setLoadingNews(false);
       }
     }
-
     fetchNews();
   }, []);
 
@@ -144,7 +142,7 @@ const HomeTab: React.FC<any> = ({
   const coherenceStatus = getCoherenceStatus(coherenceScore);
 
   /* =======================
-     REBALANCEAMENTO
+     REBALANCEAMENTO (CÁLCULO)
   ======================= */
   const rebalancingStrategy = useMemo(() => {
     const target = { fixed_income: 0.3, fii: 0.4, stock: 0.3 };
@@ -198,7 +196,7 @@ const HomeTab: React.FC<any> = ({
   return (
     <div className="space-y-6 pb-32 animate-in fade-in">
       
-      {/* 1. PATRIMÔNIO (MANTIDO) */}
+      {/* 1. PATRIMÔNIO */}
       <div className="bg-emerald-900 text-white rounded-3xl p-6 shadow-xl relative overflow-hidden">
         <div className="absolute top-0 right-0 opacity-10 transform translate-x-1/4 -translate-y-1/4">
           <Leaf size={200} />
@@ -232,10 +230,10 @@ const HomeTab: React.FC<any> = ({
         </button>
       </div>
 
-      {/* 2. IA (MANTIDO) */}
+      {/* 2. IA (CONSULTOR) */}
       {totalBalance > 0 && <IA carteira={holdings} />}
 
-      {/* 3. JARDIM CONSCIENTE (VERSÃO COM BARRA COLORIDA) */}
+      {/* 3. JARDIM CONSCIENTE (VERSÃO COM BARRA DE SAÚDE COLORIDA) */}
       {totalBalance > 0 && (
         <div className="bg-white rounded-3xl p-6 border border-gray-100 shadow-sm">
           <div className="flex justify-between items-start mb-4">
@@ -269,8 +267,9 @@ const HomeTab: React.FC<any> = ({
         </div>
       )}
 
-      {/* 4. INSIGHTS + ESTRATÉGIA (VERSÃO UNIFICADA LIMPA) */}
+      {/* 4. INSIGHTS + ESTRATÉGIA (VERSÃO UNIFICADA E LIMPA) */}
       <div className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden">
+        {/* HEADER */}
         <div className="p-6 border-b border-gray-100 bg-gray-50/50">
           <div className="flex items-center gap-2 mb-2">
             <Target className="text-emerald-600" size={20} />
@@ -283,6 +282,7 @@ const HomeTab: React.FC<any> = ({
           </p>
         </div>
 
+        {/* CORPO */}
         <div className="p-6">
           <div className="mb-6">
             <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">Estratégia do Mês</span>
@@ -299,7 +299,9 @@ const HomeTab: React.FC<any> = ({
             </div>
           </div>
 
+          {/* LISTA EDUCATIVA */}
           <div className="space-y-4 bg-gray-50 rounded-2xl p-5 border border-gray-100">
+            
             <div className="flex gap-3 items-start">
               <HelpCircle className="text-gray-400 mt-0.5 shrink-0" size={16} />
               <div>
@@ -331,24 +333,23 @@ const HomeTab: React.FC<any> = ({
                 <p className="text-sm text-gray-600 leading-relaxed">{rebalancingStrategy.content.howToDecide}</p>
               </div>
             </div>
+
           </div>
         </div>
       </div>
 
-      {/* 5. NEWS (AGORA COM DADOS REAIS E IA) */}
+      {/* 5. NOTÍCIAS (DADOS REAIS + IA) */}
       <div className="bg-white rounded-3xl p-6 border border-gray-100 shadow-sm">
         <div className="flex items-center gap-2 mb-4">
           <Newspaper className="text-emerald-500" />
           <h3 className="font-bold text-gray-900">
             Notícias do Setor 
-            {/* Indicador visual de "Live" */}
             <span className="ml-2 text-[10px] bg-red-100 text-red-600 px-2 py-0.5 rounded-full uppercase font-bold tracking-wider">
-              Agora
+              Live
             </span>
           </h3>
         </div>
 
-        {/* LOADING STATE */}
         {loadingNews && (
           <div className="space-y-3 opacity-50">
              <div className="h-16 bg-gray-100 rounded-xl animate-pulse"></div>
@@ -359,30 +360,42 @@ const HomeTab: React.FC<any> = ({
           </div>
         )}
 
-        {/* LISTA DE NOTÍCIAS REAIS */}
         {!loadingNews && realNews.map((news, idx) => (
-          <div
+          <a
             key={idx}
-            className="block p-4 bg-gray-50 hover:bg-emerald-50 rounded-2xl mb-3 transition-colors border border-transparent hover:border-emerald-100 group cursor-default"
+            href={news.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="block p-4 bg-gray-50 hover:bg-emerald-50 rounded-2xl mb-3 transition-colors border border-transparent hover:border-emerald-100 group cursor-pointer"
           >
-            <p className="font-bold text-sm text-gray-800 leading-snug group-hover:text-emerald-900">
-              {news.title}
-            </p>
+            <div className="flex justify-between items-start gap-2">
+              <p className="font-bold text-sm text-gray-800 leading-snug group-hover:text-emerald-900 line-clamp-2">
+                {news.title}
+              </p>
+              <ExternalLink size={14} className="text-gray-300 group-hover:text-emerald-500 shrink-0 mt-1" />
+            </div>
             
-            <p className="text-xs text-gray-500 mt-1 leading-relaxed">
+            <p className="text-xs text-gray-500 mt-2 leading-relaxed">
               💡 {news.impact}
             </p>
 
             <div className="flex justify-between items-center mt-2 text-[10px] text-gray-400 uppercase font-bold tracking-wider">
-              <span className="text-emerald-600">{news.source}</span>
-              <span className="flex items-center gap-1">IA Curated <ExternalLink size={10} /></span>
+              <span className="text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-md">
+                {news.source}
+              </span>
+              {/* Destaque ESG para o primeiro item */}
+              {idx === 0 && (
+                <span className="flex items-center gap-1 text-emerald-600">
+                  <Leaf size={10} /> Destaque ESG
+                </span>
+              )}
             </div>
-          </div>
+          </a>
         ))}
 
         {!loadingNews && realNews.length === 0 && (
           <p className="text-sm text-gray-500 text-center py-4">
-            Não foi possível carregar as notícias agora.
+            Não foi possível carregar as notícias. Tente recarregar.
           </p>
         )}
       </div>
