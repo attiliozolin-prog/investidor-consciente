@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { ArrowRight, Leaf, TrendingUp, Shield } from "lucide-react";
+import { ArrowRight, Leaf, TrendingUp, Shield, Heart } from "lucide-react"; // Adicionei Heart para 'Vida'
 import {
   InvestmentGoal,
   RiskProfile,
@@ -39,43 +39,49 @@ export default function Onboarding({ onComplete }: Props) {
           ))}
         </div>
 
-        {/* STEP 1 — BOAS-VINDAS */}
+        {/* STEP 1 — MANIFESTO LIVO */}
         {step === 1 && (
           <div className="space-y-6 animate-in fade-in">
-            <h1 className="text-3xl font-bold text-gray-900">
-              Bem-vindo ao Investidor Consciente
+            <div className="flex justify-center mb-4">
+               <div className="w-16 h-16 bg-emerald-100 rounded-full flex items-center justify-center text-emerald-600">
+                 <Leaf size={32} />
+               </div>
+            </div>
+            
+            <h1 className="text-3xl font-bold text-gray-900 text-center">
+              Olá, somos a Livo.
             </h1>
 
-            <p className="text-gray-600 leading-relaxed">
-              Este <strong>não é</strong> um aplicativo para comprar ou vender investimentos.
-              <br />
-              Aqui você <strong>organiza sua carteira</strong>, entende riscos e recebe
-              <strong> orientações inteligentes</strong>.
-            </p>
-
-            <p className="text-sm text-gray-500">
-              Pense nele como um <strong>consultor de bolso</strong>, sempre disponível
-              para te ajudar a tomar decisões melhores.
-            </p>
+            <div className="space-y-4 text-gray-600 leading-relaxed text-center">
+              <p>
+                Acreditamos que o dinheiro deve servir à vida, e não o contrário.
+              </p>
+              <p>
+                <strong>Não somos um banco nem uma corretora.</strong>
+              </p>
+              <p>
+                Somos seu guia de bolso para investir com calma, responsabilidade e consciência.
+              </p>
+            </div>
 
             <button
               onClick={next}
-              className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-4 rounded-xl flex items-center justify-center gap-2"
+              className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-4 rounded-xl flex items-center justify-center gap-2 transition-all"
             >
-              Começar <ArrowRight size={18} />
+              Começar minha jornada <ArrowRight size={18} />
             </button>
           </div>
         )}
 
-        {/* STEP 2 — EXPERIÊNCIA */}
+        {/* STEP 2 — EXPERIÊNCIA (Tom de Voz: Acolhedor) */}
         {step === 2 && (
           <div className="space-y-6 animate-in fade-in">
             <h2 className="text-2xl font-bold text-gray-900">
-              Qual é a sua experiência com investimentos?
+              Qual é o seu momento?
             </h2>
 
             <p className="text-sm text-gray-500">
-              Isso ajusta a linguagem, os alertas e os insights do app.
+              Não existe resposta errada. Queremos apenas adaptar nossa linguagem a você.
             </p>
 
             <button
@@ -83,11 +89,11 @@ export default function Onboarding({ onComplete }: Props) {
                 setProfile({ ...profile, experienceLevel: "iniciante" });
                 next();
               }}
-              className="w-full p-5 rounded-2xl border hover:border-emerald-300 hover:bg-emerald-50 text-left transition-all"
+              className="w-full p-5 rounded-2xl border hover:border-emerald-300 hover:bg-emerald-50 text-left transition-all group"
             >
-              <div className="font-bold">Sou iniciante</div>
+              <div className="font-bold text-gray-900 group-hover:text-emerald-800">Estou começando agora</div>
               <div className="text-sm text-gray-500">
-                Nunca investi ou estou começando agora
+                Quero aprender sem "financês" e sem pressão.
               </div>
             </button>
 
@@ -96,25 +102,25 @@ export default function Onboarding({ onComplete }: Props) {
                 setProfile({ ...profile, experienceLevel: "avancado" });
                 next();
               }}
-              className="w-full p-5 rounded-2xl border hover:border-emerald-300 hover:bg-emerald-50 text-left transition-all"
+              className="w-full p-5 rounded-2xl border hover:border-emerald-300 hover:bg-emerald-50 text-left transition-all group"
             >
-              <div className="font-bold">Já tenho experiência</div>
+              <div className="font-bold text-gray-900 group-hover:text-emerald-800">Já invisto</div>
               <div className="text-sm text-gray-500">
-                Quero monitorar, rebalancear e receber análises
+                Busco alinhar minha carteira aos meus valores.
               </div>
             </button>
           </div>
         )}
 
-        {/* STEP 3 — OBJETIVO */}
+        {/* STEP 3 — OBJETIVO (Foco na Vida) */}
         {step === 3 && (
           <div className="space-y-6 animate-in fade-in">
             <h2 className="text-2xl font-bold text-gray-900">
-              Qual é o seu principal objetivo?
+              O que você quer construir?
             </h2>
 
             <p className="text-sm text-gray-500">
-              Isso pode ser alterado depois.
+              Seu dinheiro, alinhado à sua vida.
             </p>
 
             {Object.values(InvestmentGoal).map((goal) => (
@@ -132,11 +138,11 @@ export default function Onboarding({ onComplete }: Props) {
           </div>
         )}
 
-        {/* STEP 4 — RISCO */}
+        {/* STEP 4 — RISCO (Tranquilidade) */}
         {step === 4 && (
           <div className="space-y-6 animate-in fade-in">
             <h2 className="text-2xl font-bold text-gray-900">
-              Como você se sente em relação a riscos?
+              Como você prefere caminhar?
             </h2>
 
             <button
@@ -148,9 +154,9 @@ export default function Onboarding({ onComplete }: Props) {
             >
               <Shield className="text-blue-600" />
               <div>
-                <div className="font-bold">Prefiro segurança</div>
+                <div className="font-bold">Com calma e segurança</div>
                 <div className="text-sm text-gray-500">
-                  Menos oscilações
+                  Prefiro evitar sustos, mesmo rendendo menos.
                 </div>
               </div>
             </button>
@@ -164,9 +170,9 @@ export default function Onboarding({ onComplete }: Props) {
             >
               <TrendingUp className="text-emerald-600" />
               <div>
-                <div className="font-bold">Equilíbrio</div>
+                <div className="font-bold">Com equilíbrio</div>
                 <div className="text-sm text-gray-500">
-                  Risco controlado
+                  Busco crescimento moderado com riscos controlados.
                 </div>
               </div>
             </button>
@@ -180,31 +186,30 @@ export default function Onboarding({ onComplete }: Props) {
             >
               <TrendingUp className="text-orange-600" />
               <div>
-                <div className="font-bold">Busco mais retorno</div>
+                <div className="font-bold">Com foco no longo prazo</div>
                 <div className="text-sm text-gray-500">
-                  Aceito oscilações
+                  Aceito oscilações hoje para construir mais amanhã.
                 </div>
               </div>
             </button>
           </div>
         )}
 
-        {/* STEP 5 — CONSCIÊNCIA */}
+        {/* STEP 5 — VALORES (Essência Livo) */}
         {step === 5 && (
           <div className="space-y-6 animate-in fade-in">
             <h2 className="text-2xl font-bold text-gray-900">
-              Além do retorno financeiro
+              Investir também é uma escolha ética
             </h2>
 
             <p className="text-sm text-gray-600">
-              Você também pode considerar o impacto ambiental, social e ético
-              das empresas — no seu ritmo.
+              Na Livo, o impacto ambiental e social das empresas importa tanto quanto o lucro. Quanto isso pesa para você?
             </p>
 
-            <div className="bg-gray-50 p-6 rounded-2xl space-y-4">
+            <div className="bg-gray-50 p-6 rounded-2xl space-y-4 border border-gray-100">
               <div className="flex justify-between text-sm font-semibold text-gray-500">
-                <span>Retorno</span>
-                <span>Impacto</span>
+                <span>Foco em Retorno</span>
+                <span>Foco em Impacto</span>
               </div>
               <input
                 type="range"
@@ -218,7 +223,7 @@ export default function Onboarding({ onComplete }: Props) {
                     esgImportance: Number(e.target.value),
                   })
                 }
-                className="w-full accent-emerald-600"
+                className="w-full accent-emerald-600 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
               />
             </div>
 
@@ -229,9 +234,9 @@ export default function Onboarding({ onComplete }: Props) {
                   isOnboardingComplete: true,
                 })
               }
-              className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-4 rounded-xl flex items-center justify-center gap-2"
+              className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-4 rounded-xl flex items-center justify-center gap-2 shadow-lg shadow-emerald-200 transition-all"
             >
-              Finalizar <Leaf size={18} />
+              Entrar na Livo <Leaf size={18} />
             </button>
           </div>
         )}
