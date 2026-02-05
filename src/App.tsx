@@ -198,29 +198,32 @@ export default function App() {
   return (
     <div className="max-w-5xl mx-auto bg-[#F9FAFB] min-h-screen relative shadow-2xl border-x border-gray-200">
       
-      {/* HEADER */}
+   {/* HEADER LIVO */}
       <header className="px-6 pt-12 pb-4 flex justify-between items-center bg-white sticky top-0 z-20 border-b border-gray-100">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-emerald-100 rounded-full flex items-center justify-center">
-            <User size={20} className="text-emerald-700" />
+          {/* Logo Livo (Ícone de Folha) */}
+          <div className="w-10 h-10 bg-emerald-100 rounded-full flex items-center justify-center text-emerald-600 shadow-sm">
+            <Leaf size={24} fill="currentColor" className="opacity-20" />
+            <Leaf size={20} className="absolute" />
           </div>
           <div>
-            <h1 className="text-sm font-bold text-gray-900">Olá, Investidor</h1>
-            <p className="text-xs text-emerald-600 font-medium">
-              {userProfile.riskProfile === "Personalizado" ? "Perfil Personalizado" : userProfile.goal}
+            <h1 className="text-xl font-bold text-gray-900 tracking-tight leading-none">Livo</h1>
+            <p className="text-[10px] text-gray-500 font-medium uppercase tracking-wider">
+              {userProfile.riskProfile === "Personalizado" ? "Estratégia Própria" : userProfile.goal || "Investidor Consciente"}
             </p>
           </div>
         </div>
+        
         <button
           onClick={() => {
-            if (window.confirm("Resetar TUDO? Essa ação é irreversível.")) {
+            if (window.confirm("Tem certeza? Isso apagará todos os seus dados e carteira.")) {
               localStorage.clear();
               window.location.reload();
             }
           }}
-          className="text-xs font-bold text-red-600 bg-red-50 px-3 py-2 rounded-md hover:bg-red-100 transition-colors"
+          className="text-[10px] font-bold text-red-500 bg-red-50 px-3 py-1.5 rounded-full hover:bg-red-100 transition-colors"
         >
-          Resetar App
+          Sair / Resetar
         </button>
       </header>
 
