@@ -11,6 +11,11 @@ import {
   Target,
   Newspaper,
   ExternalLink,
+  Building2,
+  ShieldCheck,
+  HelpCircle,
+  Search,
+  CheckCircle2,
 } from "lucide-react";
 
 import { Holding } from "../../../types";
@@ -31,6 +36,39 @@ const MOCK_NEWS = [
     url: "#",
   },
 ];
+
+/* =======================
+   CONTEÚDO EDUCATIVO (ESTRATÉGIA)
+======================= */
+const STRATEGY_CONTENT = {
+  fixed_income: {
+    title: "Renda Fixa",
+    icon: <ShieldCheck size={24} className="text-blue-600" />,
+    color: "bg-blue-50 text-blue-900 border-blue-100",
+    whatIs: "Empréstimo que você faz para o governo ou bancos em troca de juros. É a base da segurança.",
+    why: "Sua carteira precisa de estabilidade e liquidez para reduzir riscos e formar sua reserva de emergência.",
+    howToFind: "Busque por 'Tesouro Direto', 'CDB' ou 'LCI/LCA' no app da sua corretora.",
+    howToDecide: "Prefira Tesouro Selic para reserva imediata ou CDBs que paguem acima de 100% do CDI para prazos maiores.",
+  },
+  fii: {
+    title: "Fundos Imobiliários",
+    icon: <Building2 size={24} className="text-orange-600" />,
+    color: "bg-orange-50 text-orange-900 border-orange-100",
+    whatIs: "Fundos que investem em imóveis (shoppings, galpões) ou papéis do setor. Você vira 'dono' de pedacinhos de imóveis.",
+    why: "Sua carteira se beneficiaria de renda mensal passiva (aluguéis) sem a volatilidade extrema das ações.",
+    howToFind: "Procure por códigos com final 11 (ex: HGLG11, KNRI11) na busca de ativos.",
+    howToDecide: "Olhe a qualidade dos imóveis, quem administra o fundo e se ele paga dividendos constantes (Dividend Yield).",
+  },
+  stock: {
+    title: "Ações",
+    icon: <TrendingUp size={24} className="text-emerald-600" />,
+    color: "bg-emerald-50 text-emerald-900 border-emerald-100",
+    whatIs: "Menores pedaços de empresas reais. Você se torna sócio e ganha com o crescimento e lucros delas.",
+    why: "Sua carteira está segura demais e precisa de potencial de crescimento a longo prazo para bater a inflação.",
+    howToFind: "Procure por códigos de 4 letras seguidos de 3 (ON) ou 4 (PN) (ex: WEG3, ITUB4).",
+    howToDecide: "Busque empresas lucrativas, líderes de setor e com boas notas ESG (Sustentabilidade).",
+  },
+};
 
 /* =======================
    COMPONENT
@@ -132,14 +170,10 @@ const HomeTab: React.FC<any> = ({
       }
     });
 
-    const focusName =
-      focus === "fixed_income"
-        ? "Renda Fixa"
-        : focus === "fii"
-        ? "Fundos Imobiliários"
-        : "Ações";
-
-    return { focusClass: focusName };
+    return { 
+      key: focus,
+      content: STRATEGY_CONTENT[focus] 
+    };
   }, [holdings, userProfile]);
 
   /* =======================
@@ -148,11 +182,16 @@ const HomeTab: React.FC<any> = ({
   return (
     <div className="space-y-6 pb-32">
       {/* PATRIMÔNIO */}
-      <div className="bg-emerald-900 text-white rounded-3xl p-6 shadow-xl">
-        <p className="text-emerald-100 text-sm">Patrimônio Total</p>
+      <div className="bg-emerald-900 text-white rounded-3xl p-6 shadow-xl relative overflow-hidden">
+        {/* Background Pattern Suave */}
+        <div className="absolute top-0 right-0 opacity-10 transform translate-x-1/4 -translate-y-1/4">
+          <Leaf size={200} />
+        </div>
 
-        <div className="flex items-center gap-3 mt-1">
-          <h2 className="text-3xl font-bold">
+        <p className="text-emerald-100 text-sm font-medium">Patrimônio Total</p>
+
+        <div className="flex items-center gap-3 mt-1 relative z-10">
+          <h2 className="text-4xl font-bold tracking-tight">
             {showValues
               ? `R$ ${totalBalance.toLocaleString("pt-BR", {
                   minimumFractionDigits: 2,
@@ -160,23 +199,27 @@ const HomeTab: React.FC<any> = ({
               : "••••••••"}
           </h2>
 
-          <button onClick={onToggleValues}>
-            {showValues ? <EyeOff /> : <Eye />}
+          <button onClick={onToggleValues} className="opacity-80 hover:opacity-100 transition-opacity">
+            {showValues ? <EyeOff size={20} /> : <Eye size={20} />}
           </button>
         </div>
 
         {totalBalance > 0 && (
-          <div className="mt-2 flex items-center gap-2 text-sm font-bold">
-            {totalProfit >= 0 ? <TrendingUp /> : <TrendingDown />}
-            {showValues ? `${profitPercentage.toFixed(2)}%` : "••••"}
+          <div className="mt-2 flex items-center gap-2 text-sm font-bold text-emerald-300">
+            {totalProfit >= 0 ? <TrendingUp size={16} /> : <TrendingDown size={16} />}
+            <span>
+              {showValues ? (
+                 <>R$ {Math.abs(totalProfit).toLocaleString("pt-BR", { minimumFractionDigits: 2 })} ({profitPercentage.toFixed(2)}%)</>
+              ) : "••••"}
+            </span>
           </div>
         )}
 
         <button
           onClick={onAddTransaction}
-          className="mt-6 w-full bg-emerald-600 py-3 rounded-xl font-bold flex items-center justify-center gap-2"
+          className="mt-6 w-full bg-emerald-500 hover:bg-emerald-400 text-white py-3.5 rounded-xl font-bold flex items-center justify-center gap-2 transition-colors shadow-lg shadow-emerald-900/20"
         >
-          <Plus /> Novo Aporte
+          <Plus size={20} /> Novo Aporte
         </button>
       </div>
 
@@ -185,71 +228,117 @@ const HomeTab: React.FC<any> = ({
 
       {/* COERÊNCIA */}
       {totalBalance > 0 && (
-        <div className="bg-white rounded-3xl p-6 border">
-          <div className="flex justify-between items-center mb-4">
-            <div>
-              <h3 className="font-bold">Seu jardim de investimentos</h3>
-              <p className="text-xs text-gray-500">
-                Quanto maior a coerência, mais sua árvore cresce.
-              </p>
-            </div>
-
-            <div className="w-16 h-16 flex items-center justify-center rounded-2xl bg-gray-100">
-              {coherenceScore > 90 ? (
-                <TreeDeciduous size={36} />
-              ) : coherenceScore > 50 ? (
-                <Leaf size={32} />
-              ) : (
-                <Sprout size={32} />
-              )}
-            </div>
+        <div className="bg-white rounded-3xl p-6 border border-gray-100 shadow-sm flex justify-between items-center">
+          <div>
+            <h3 className="font-bold text-gray-900 text-lg">Jardim Consciente</h3>
+            <p className="text-xs text-gray-500 mt-1 max-w-[200px]">
+              O equilíbrio entre retorno e seus valores pessoais.
+            </p>
           </div>
 
-          <p className="text-4xl font-bold">{coherenceScore}%</p>
+          <div className="flex flex-col items-center">
+             <div className="w-16 h-16 flex items-center justify-center rounded-2xl bg-emerald-50 text-emerald-600 mb-1">
+              {coherenceScore > 90 ? (
+                <TreeDeciduous size={32} />
+              ) : coherenceScore > 50 ? (
+                <Leaf size={28} />
+              ) : (
+                <Sprout size={28} />
+              )}
+            </div>
+            <span className="font-bold text-xl text-emerald-700">{coherenceScore}%</span>
+          </div>
         </div>
       )}
 
-      {/* INSIGHTS HEADER */}
-      <div className="bg-white rounded-3xl p-6 border">
-        <h3 className="font-bold text-lg mb-2">
-          Insights para decisões mais conscientes
-        </h3>
-        <p className="text-sm text-gray-600">
-          Essas análises ajudam você a entender o equilíbrio da sua carteira.
-          De acordo com seu perfil, esse deve ser o foco de seus próximos
-          investimentos.
-        </p>
-      </div>
-
-      {/* ESTRATÉGIA */}
-      <div className="bg-white rounded-3xl p-6 border">
-        <div className="flex items-center gap-2 mb-3">
-          <Target className="text-emerald-600" />
-          <h3 className="font-bold">Estratégia do Mês</h3>
+      {/* CARD UNIFICADO: INSIGHTS + ESTRATÉGIA */}
+      <div className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden">
+        {/* HEADER DO CARD */}
+        <div className="p-6 border-b border-gray-100 bg-gray-50/50">
+          <div className="flex items-center gap-2 mb-2">
+            <Target className="text-emerald-600" size={20} />
+            <h3 className="font-bold text-lg text-gray-900">
+              Insights Conscientes
+            </h3>
+          </div>
+          <p className="text-sm text-gray-600 leading-relaxed">
+            Com base no seu perfil <strong>{userProfile.riskProfile}</strong> e na sua carteira atual, identificamos onde você deve focar seus próximos passos.
+          </p>
         </div>
 
-        <p className="text-sm text-gray-700">
-          Foco em <strong>{rebalancingStrategy.focusClass}</strong>
-        </p>
+        {/* CORPO DO CARD (ESTRATÉGIA) */}
+        <div className="p-6">
+          <div className="mb-6">
+            <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">Estratégia do Mês</span>
+            <div className="flex items-center gap-3 mt-2">
+               <div className={`w-12 h-12 rounded-full flex items-center justify-center ${rebalancingStrategy.content.color.split(' ')[0]} ${rebalancingStrategy.content.color.split(' ')[1]}`}>
+                 {rebalancingStrategy.content.icon}
+               </div>
+               <div>
+                 <p className="text-sm text-gray-500">Foco recomendado em:</p>
+                 <h4 className="text-xl font-bold text-gray-900 leading-tight">
+                   {rebalancingStrategy.content.title}
+                 </h4>
+               </div>
+            </div>
+          </div>
+
+          {/* SESSÃO EDUCATIVA (Accordion Style) */}
+          <div className="space-y-4 bg-gray-50 rounded-2xl p-5 border border-gray-100">
+            
+            <div className="flex gap-3 items-start">
+              <HelpCircle className="text-gray-400 mt-0.5 shrink-0" size={16} />
+              <div>
+                <p className="text-xs font-bold text-gray-700 uppercase mb-1">O que são?</p>
+                <p className="text-sm text-gray-600 leading-relaxed">{rebalancingStrategy.content.whatIs}</p>
+              </div>
+            </div>
+
+            <div className="flex gap-3 items-start">
+              <CheckCircle2 className="text-emerald-500 mt-0.5 shrink-0" size={16} />
+              <div>
+                <p className="text-xs font-bold text-gray-700 uppercase mb-1">Por que faz sentido agora?</p>
+                <p className="text-sm text-gray-600 leading-relaxed">{rebalancingStrategy.content.why}</p>
+              </div>
+            </div>
+
+             <div className="flex gap-3 items-start">
+              <Search className="text-blue-400 mt-0.5 shrink-0" size={16} />
+              <div>
+                <p className="text-xs font-bold text-gray-700 uppercase mb-1">Como encontrar?</p>
+                <p className="text-sm text-gray-600 leading-relaxed">{rebalancingStrategy.content.howToFind}</p>
+              </div>
+            </div>
+
+             <div className="flex gap-3 items-start">
+              <Target className="text-orange-400 mt-0.5 shrink-0" size={16} />
+              <div>
+                <p className="text-xs font-bold text-gray-700 uppercase mb-1">Como decidir?</p>
+                <p className="text-sm text-gray-600 leading-relaxed">{rebalancingStrategy.content.howToDecide}</p>
+              </div>
+            </div>
+
+          </div>
+        </div>
       </div>
 
       {/* NEWS */}
-      <div className="bg-white rounded-3xl p-6 border">
+      <div className="bg-white rounded-3xl p-6 border border-gray-100 shadow-sm">
         <div className="flex items-center gap-2 mb-4">
           <Newspaper className="text-emerald-500" />
-          <h3 className="font-bold">Insights de Mercado</h3>
+          <h3 className="font-bold text-gray-900">Notícias do Setor</h3>
         </div>
 
         {MOCK_NEWS.map((news, idx) => (
           <a
             key={idx}
             href={news.url}
-            className="block p-3 bg-gray-50 rounded-xl mb-2"
+            className="block p-4 bg-gray-50 hover:bg-emerald-50 rounded-2xl mb-2 transition-colors border border-transparent hover:border-emerald-100"
           >
-            <p className="font-semibold text-sm">{news.title}</p>
-            <div className="flex justify-between items-center mt-1 text-xs text-gray-500">
-              <span>{news.source}</span>
-              <ExternalLink size={12} />
+            <p className="font-semibold text-sm text-gray-800 leading-snug">{news.title}</p>
+            <div className="flex justify-between items-center mt-2 text-xs text-gray-500">
+              <span className="font-medium text-emerald-700">{news.source}</span>
+              <ExternalLink size={14} />
             </div>
           </a>
         ))}
