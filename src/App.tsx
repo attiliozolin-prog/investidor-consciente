@@ -10,6 +10,7 @@ import {
 import Onboarding from "./components/onboarding";
 import AddTransactionModal from "./components/modals/AddTransactionModal";
 import StockModal from "./components/modals/StockModal";
+import CustomStrategyModal from "./components/modals/CustomStrategyModal"; // <--- NOVO IMPORT
 import HomeTab from "./components/layout/tabs/HomeTab";
 import PortfolioDashboard from "./components/layout/tabs/PortfolioDashboard";
 import { Transaction, Holding, UserProfile, InvestmentGoal, RiskProfile } from "./types";
@@ -23,6 +24,9 @@ export default function App() {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [transactionModalType, setTransactionModalType] = useState<"BUY" | "SELL">("BUY");
   
+  // -- CONTROLE DO MODAL DE ESTRATÉGIA PERSONALIZADA --
+  const [isCustomStrategyOpen, setIsCustomStrategyOpen] = useState(false); // <--- NOVO STATE
+
   const [selectedStockTicker, setSelectedStockTicker] = useState<string | null>(null);
 
   // State: Profile
@@ -134,6 +138,16 @@ export default function App() {
     }
   };
 
+  // -- HANDLER PARA SALVAR ESTRATÉGIA PERSONALIZADA --
+  const handleSaveCustomStrategy = (targets: { fixed_income: number; fii: number; stock: number }) => {
+    setUserProfile((prev) => ({
+      ...prev,
+      riskProfile: "Personalizado", // Altera o nome do perfil
+      customTargets: targets,       // Salva as novas metas
+    }));
+    setIsCustomStrategyOpen(false);
+  };
+
   if (!userProfile.isOnboardingComplete)
     return <Onboarding onComplete={setUserProfile} />;
 
@@ -147,7 +161,7 @@ export default function App() {
           <div>
             <h1 className="text-sm font-bold text-gray-900">Olá, Investidor</h1>
             <p className="text-xs text-emerald-600 font-medium">
-              {userProfile.goal}
+              {userProfile.riskProfile === "Personalizado" ? "Perfil Personalizado" : userProfile.goal}
             </p>
           </div>
         </div>
@@ -183,6 +197,7 @@ export default function App() {
             onAddTransaction={openBuyModal}     // Botão Verde (+)
             onSellTransaction={openSellModal}   // Botão Vermelho (-)
             onRetakeOnboarding={handleRetakeOnboarding} // Botão Recalibrar
+            onOpenCustomStrategy={() => setIsCustomStrategyOpen(true)} // <--- Abre o Modal Personalizado
             onDeleteAsset={handleDeleteAsset}
             onDeleteTransaction={(id: string) => {
                const updated = transactions.filter((t) => t.id !== id);
@@ -272,15 +287,17 @@ export default function App() {
         </button>
       </nav>
 
+      {/* MODAL DE TRANSAÇÃO */}
       {isAddModalOpen && (
         <AddTransactionModal
           stocks={STOCKS_DB}
           onClose={() => setIsAddModalOpen(false)}
           onSave={handleAddTransaction}
-          initialType={transactionModalType} // Passa se é Compra ou Venda
+          initialType={transactionModalType} 
         />
       )}
       
+      {/* MODAL DE DETALHES DA AÇÃO */}
       {selectedStockTicker && (
         <StockModal
           stock={rankedStocks.find((s) => s.ticker === selectedStockTicker)!}
@@ -290,6 +307,15 @@ export default function App() {
               ?.coherenceScore || 0
           }
           onClose={() => setSelectedStockTicker(null)}
+        />
+      )}
+
+      {/* MODAL DE ESTRATÉGIA PERSONALIZADA (NOVO) */}
+      {isCustomStrategyOpen && (
+        <CustomStrategyModal
+          currentTargets={userProfile.customTargets || { fixed_income: 40, fii: 30, stock: 30 }}
+          onClose={() => setIsCustomStrategyOpen(false)}
+          onSave={handleSaveCustomStrategy}
         />
       )}
     </div>
