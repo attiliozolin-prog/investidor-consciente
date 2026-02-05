@@ -14,6 +14,7 @@ import {
   X,
   BookOpen,
   ShieldCheck,
+  Sliders // Ícone para o botão Personalizar
 } from "lucide-react";
 import {
   PieChart,
@@ -37,13 +38,14 @@ const PortfolioDashboard: React.FC<any> = ({
   onAddTransaction,
   onSellTransaction,
   onRetakeOnboarding,
+  onOpenCustomStrategy, // <--- Recebendo a função nova
   onDeleteAsset,
   onDeleteTransaction,
   rankedStocks,
   showValues,
 }) => {
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
-  const [isInfoModalOpen, setIsInfoModalOpen] = useState(false); // Novo Estado do Modal Educativo
+  const [isInfoModalOpen, setIsInfoModalOpen] = useState(false);
 
   /* =======================
      HOLDINGS (CÁLCULOS)
@@ -102,7 +104,7 @@ const PortfolioDashboard: React.FC<any> = ({
   }, [transactions, rankedStocks]);
 
   /* =======================
-     TOTAIS & ALOCAÇÃO
+     TOTAIS & ALOCAÇÃO (LÓGICA HÍBRIDA)
   ======================= */
   const totalBalance = holdings.reduce((acc, h) => acc + h.totalValue, 0);
   const totalInvested = holdings.reduce((acc, h) => acc + h.quantity * h.averagePrice, 0);
@@ -120,16 +122,26 @@ const PortfolioDashboard: React.FC<any> = ({
       if (groups[type]) groups[type].value += h.totalValue;
     });
 
-    let targets = { fixed_income: 40, fii: 30, stock: 30 };
-    if (userProfile.riskProfile === "Conservador") targets = { fixed_income: 80, fii: 15, stock: 5 };
-    if (userProfile.riskProfile === "Arrojado") targets = { fixed_income: 20, fii: 35, stock: 45 };
+    // 1. DEFINE OS ALVOS (TARGETS)
+    let targets = { fixed_income: 40, fii: 30, stock: 30 }; // Default Moderado
+
+    if (userProfile.riskProfile === "Personalizado" && userProfile.customTargets) {
+      // SE FOR PERSONALIZADO, USA OS DADOS DO USUÁRIO
+      targets = userProfile.customTargets;
+    } 
+    else if (userProfile.riskProfile === "Conservador") {
+      targets = { fixed_income: 80, fii: 15, stock: 5 };
+    } 
+    else if (userProfile.riskProfile === "Arrojado") {
+      targets = { fixed_income: 20, fii: 35, stock: 45 };
+    }
 
     return Object.keys(groups).map((key) => {
       const k = key as keyof typeof groups;
       const currentPct = totalBalance > 0 ? (groups[k].value / totalBalance) * 100 : 0;
       return { id: k, ...groups[k], currentPct, targetPct: targets[k as keyof typeof targets] };
     });
-  }, [holdings, totalBalance, userProfile.riskProfile]);
+  }, [holdings, totalBalance, userProfile]);
 
   /* =======================
      DADOS PIE CHART
@@ -143,13 +155,12 @@ const PortfolioDashboard: React.FC<any> = ({
   return (
     <div className="space-y-6 pb-32 animate-in fade-in">
       
-      {/* 1. HEADER PERFIL + INFO */}
-      <div className="flex justify-between items-center px-2">
+      {/* 1. HEADER PERFIL + BOTÕES DE AÇÃO */}
+      <div className="flex justify-between items-start px-2">
         <div className="flex items-center gap-2">
            <div>
              <h2 className="font-bold text-gray-900 text-xl flex items-center gap-2">
                Minha Carteira
-               {/* BOTÃO DE INFORMAÇÃO (EDUCATIVO) */}
                <button 
                  onClick={() => setIsInfoModalOpen(true)}
                  className="text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 p-1 rounded-full transition-colors"
@@ -157,15 +168,31 @@ const PortfolioDashboard: React.FC<any> = ({
                  <Info size={18} />
                </button>
              </h2>
-             <p className="text-xs text-gray-500">Perfil: {userProfile.riskProfile || 'Não definido'}</p>
+             <p className="text-xs text-gray-500">
+               Perfil: <span className="font-medium text-emerald-600">{userProfile.riskProfile || 'Não definido'}</span>
+             </p>
            </div>
         </div>
-        <button 
-           onClick={onRetakeOnboarding}
-           className="text-xs flex items-center gap-1.5 px-3 py-1.5 bg-white border border-gray-200 rounded-full text-gray-600 hover:bg-gray-50 hover:text-emerald-600 transition-colors shadow-sm"
-        >
-           <Settings size={12} /> Recalibrar
-        </button>
+        
+        <div className="flex gap-2">
+          {/* Botão Personalizar (Novo) */}
+          <button 
+             onClick={onOpenCustomStrategy}
+             className="text-xs flex items-center gap-1.5 px-3 py-1.5 bg-gray-900 text-white border border-gray-900 rounded-full hover:bg-gray-800 transition-colors shadow-sm"
+             title="Criar estratégia própria"
+          >
+             <Sliders size={12} /> Personalizar
+          </button>
+
+          {/* Botão Recalibrar */}
+          <button 
+             onClick={onRetakeOnboarding}
+             className="text-xs flex items-center gap-1.5 px-3 py-1.5 bg-white border border-gray-200 rounded-full text-gray-500 hover:bg-gray-50 hover:text-emerald-600 transition-colors shadow-sm"
+             title="Refazer teste de perfil"
+          >
+             <Settings size={12} />
+          </button>
+        </div>
       </div>
 
       {/* 2. CARD PATRIMÔNIO */}
@@ -261,7 +288,7 @@ const PortfolioDashboard: React.FC<any> = ({
         </button>
       </div>
 
-      {/* GRÁFICO (COM LEGENDAS CORRIGIDAS) */}
+      {/* GRÁFICO */}
       {holdings.length > 0 && (
         <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm opacity-90 hover:opacity-100 transition-opacity">
           <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-4 text-center">Distribuição Visual</h4>
@@ -274,7 +301,7 @@ const PortfolioDashboard: React.FC<any> = ({
                   outerRadius={80}
                   dataKey="value"
                   paddingAngle={4}
-                  label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`} // 🔥 LEGENDA FORÇADA NO GRÁFICO
+                  label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
                 >
                   {pieData.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
                 </Pie>
@@ -291,7 +318,7 @@ const PortfolioDashboard: React.FC<any> = ({
         <TransactionHistoryModal transactions={transactions} onClose={() => setIsHistoryOpen(false)} onDelete={onDeleteTransaction} />
       )}
 
-      {/* NOVO MODAL: EDUCAÇÃO FINANCEIRA */}
+      {/* MODAL EDUCATIVO */}
       {isInfoModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/60 backdrop-blur-sm animate-in fade-in">
           <div className="bg-white rounded-3xl w-full max-w-lg shadow-2xl relative overflow-hidden">
