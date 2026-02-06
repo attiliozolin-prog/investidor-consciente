@@ -6,7 +6,7 @@ import { MarketService } from "../../services/market";
 interface AddTransactionModalProps {
   stocks: any[];
   onClose: () => void;
-  // MUDANÇA: Agora aceitamos um terceiro argumento opcional (dados completos da stock)
+  // onSave aceita (transação, dadosExtras?)
   onSave: (transaction: Omit<Transaction, "id">, stockData?: any) => void;
   initialType?: "BUY" | "SELL";
 }
@@ -20,7 +20,7 @@ export default function AddTransactionModal({
   const [type, setType] = useState<"BUY" | "SELL">(initialType);
   
   // Inputs
-  const [ticker, setTicker] = useState(""); // Nome oficial (ex: PETR4)
+  const [ticker, setTicker] = useState(""); 
   const [quantity, setQuantity] = useState("");
   const [price, setPrice] = useState("");
   const [date, setDate] = useState(new Date().toISOString().split("T")[0]);
@@ -31,13 +31,9 @@ export default function AddTransactionModal({
   const [isSearching, setIsSearching] = useState(false);
   const [showResults, setShowResults] = useState(false);
   
-  // Armazena o objeto completo da ação selecionada para passar ao App
   const [selectedStockData, setSelectedStockData] = useState<any>(null);
-
-  // Referência para focar no próximo input
   const quantityInputRef = useRef<HTMLInputElement>(null);
 
-  // Debounce da Busca
   useEffect(() => {
     if (assetCategory === "FIXED") return;
 
@@ -45,7 +41,6 @@ export default function AddTransactionModal({
       if (searchTerm.length >= 2) {
         setIsSearching(true);
         try {
-          // Limpa caracteres especiais e busca
           const cleanTerm = searchTerm.trim();
           const results = await MarketService.searchStocks(cleanTerm);
           setSearchResults(results);
@@ -65,13 +60,11 @@ export default function AddTransactionModal({
   }, [searchTerm, assetCategory]);
 
   const handleSelectStock = (stock: any) => {
-    // 1. Preenche os dados
     setTicker(stock.ticker);
     setPrice(stock.price ? stock.price.toFixed(2) : "0.00");
-    setSearchTerm(stock.ticker); // Mostra o ticker no input
-    setSelectedStockData(stock); // Guarda os dados para salvar depois
+    setSearchTerm(stock.ticker);
+    setSelectedStockData(stock);
 
-    // 2. UX Mobile: Fecha a lista e foca na quantidade
     setShowResults(false);
     if (quantityInputRef.current) {
       quantityInputRef.current.focus();
@@ -82,7 +75,6 @@ export default function AddTransactionModal({
     e.preventDefault();
     if (!price || !date) return;
 
-    // Garante números válidos
     const numQty = assetCategory === "VARIABLE" ? Number(quantity) : 1;
     const numPrice = Number(price);
 
@@ -93,23 +85,31 @@ export default function AddTransactionModal({
 
     if (assetCategory === "VARIABLE") {
       if (!ticker) return;
+      // MODO VARIÁVEL: Passa a transação e os dados da API (selectedStockData)
       onSave({
         ticker: ticker.toUpperCase(),
         type,
         quantity: numQty,
         price: numPrice,
         date,
-      }, selectedStockData); // Envia dados extras (preço atual, setor, etc)
+      }, selectedStockData); 
     } else {
-      // Renda Fixa
+      // MODO RENDA FIXA:
       if (!searchTerm) return;
+      
       onSave({
-        ticker: searchTerm.toUpperCase(), // Usa o nome digitado como ticker
+        // OBJETO 1: A transação estrita (sem campos extras para não dar erro TS)
+        ticker: searchTerm.toUpperCase(),
         type,
         quantity: 1,
-        price: numPrice, // Valor total investido
+        price: numPrice,
         date,
-        assetType: 'fixed_income' // Força o tipo
+      }, {
+        // OBJETO 2: Dados Extras (onde podemos passar o assetType livremente)
+        ticker: searchTerm.toUpperCase(),
+        price: numPrice,
+        name: searchTerm.toUpperCase(),
+        assetType: 'fixed_income' // <--- AQUI ESTÁ A CORREÇÃO
       });
     }
 
@@ -118,10 +118,8 @@ export default function AddTransactionModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-4 bg-gray-900/60 backdrop-blur-sm animate-in fade-in">
-      {/* Container Principal: Altura ajustada para mobile (não cobre teclado) */}
       <div className="bg-white rounded-t-3xl sm:rounded-3xl shadow-2xl w-full max-w-md overflow-hidden flex flex-col max-h-[90vh]">
         
-        {/* Header Fixo */}
         <div className="bg-gray-50 border-b border-gray-100 flex-shrink-0">
           <div className="flex justify-between items-center px-6 py-4">
             <h2 className="text-lg font-bold text-gray-900">Adicionar Transação</h2>
@@ -156,10 +154,7 @@ export default function AddTransactionModal({
           </div>
         </div>
 
-        {/* Corpo com Scroll (Para o teclado não esconder campos) */}
         <div className="overflow-y-auto p-6 space-y-5">
-          
-          {/* Toggle Compra/Venda */}
           <div className="flex bg-gray-100 p-1 rounded-xl">
             <button
               type="button"
@@ -181,7 +176,6 @@ export default function AddTransactionModal({
             </button>
           </div>
 
-          {/* CAMPO DE BUSCA (Crítico) */}
           <div className="space-y-1 relative z-20">
             <label className="text-xs font-bold text-gray-500 uppercase">
               {assetCategory === "VARIABLE" ? "Ativo (Ticker)" : "Nome do Título"}
@@ -201,23 +195,21 @@ export default function AddTransactionModal({
                     setTicker("");
                   }
                   if (assetCategory === "FIXED") {
-                    setTicker(e.target.value); // Na renda fixa, o ticker é o nome
+                    setTicker(e.target.value);
                   }
                 }}
                 className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none transition-all font-bold text-gray-900 uppercase placeholder:normal-case"
               />
             </div>
 
-            {/* LISTA DE RESULTADOS (CORRIGIDA PARA MOBILE) */}
             {assetCategory === "VARIABLE" && showResults && searchResults.length > 0 && (
               <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-xl shadow-2xl max-h-48 overflow-y-auto z-50 ring-1 ring-black/5">
                 {searchResults.map((stock) => (
                   <button
                     key={stock.ticker}
                     type="button"
-                    // MUDANÇA IMPORTANTE: onMouseDown dispara antes do onBlur do input
                     onMouseDown={(e) => {
-                      e.preventDefault(); // Impede que o input perca foco antes da ação
+                      e.preventDefault(); 
                       handleSelectStock(stock);
                     }}
                     className="w-full text-left px-4 py-3 hover:bg-emerald-50 flex items-center justify-between border-b border-gray-50 last:border-0 transition-colors"
@@ -234,7 +226,6 @@ export default function AddTransactionModal({
               </div>
             )}
             
-            {/* Aviso de erro */}
             {assetCategory === "VARIABLE" && searchTerm.length >= 3 && !isSearching && searchResults.length === 0 && showResults && (
               <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-red-100 rounded-xl p-3 z-20 text-center shadow-lg">
                  <p className="text-xs text-red-500 flex items-center justify-center gap-1">
@@ -245,7 +236,6 @@ export default function AddTransactionModal({
           </div>
 
           <div className="grid grid-cols-2 gap-4">
-            {/* QUANTIDADE */}
             {assetCategory === "VARIABLE" ? (
               <div className="space-y-1">
                 <label className="text-xs font-bold text-gray-500 uppercase">Quantidade</label>
@@ -271,7 +261,6 @@ export default function AddTransactionModal({
               </div>
             )}
 
-            {/* PREÇO */}
             <div className={`space-y-1 ${assetCategory === "FIXED" ? "col-span-2 md:col-span-1" : ""}`}>
               <label className="text-xs font-bold text-gray-500 uppercase">
                 {assetCategory === "VARIABLE" ? "Preço Unit. (R$)" : "Valor Total (R$)"}
@@ -291,7 +280,6 @@ export default function AddTransactionModal({
             </div>
           </div>
 
-          {/* DATA */}
           <div className="space-y-1">
             <label className="text-xs font-bold text-gray-500 uppercase">Data</label>
             <div className="relative">
@@ -318,8 +306,6 @@ export default function AddTransactionModal({
           >
             {type === "BUY" ? "Confirmar" : "Confirmar Venda"}
           </button>
-          
-          {/* Espaço extra para scroll no mobile */}
           <div className="h-4 sm:hidden"></div>
         </div>
       </div>
