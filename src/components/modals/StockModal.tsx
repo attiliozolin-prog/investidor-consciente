@@ -2,6 +2,23 @@ import React, { useState } from "react";
 import { X, ExternalLink, Leaf, AlertTriangle, CheckCircle2, Sparkles, Loader2, Info } from "lucide-react";
 import { UserProfile } from "../../types";
 
+// --- DICIONÁRIO DE ÍNDICES (RESTAURADO) ---
+// Define o significado exato de cada sigla da B3
+const BADGE_DEFINITIONS: Record<string, string> = {
+  "ISE": "Índice de Sustentabilidade Empresarial: Empresas com alto padrão de eficiência ESG.",
+  "ICO2": "Índice Carbono Eficiente: Empresas comprometidas com a redução de emissões de gases estufa.",
+  "IGPTW": "Índice GPTW: As melhores empresas para se trabalhar (Great Place to Work).",
+  "IDIVERSA": "Índice de Diversidade: Destaque em diversidade de gênero e raça na liderança.",
+  "IBOV": "Ibovespa: As empresas mais importantes e negociadas do mercado brasileiro.",
+  "IBrX": "Índice Brasil: As 100 ações mais negociadas da B3.",
+  "SMLL": "Small Caps: Empresas de menor porte com alto potencial de crescimento.",
+  "IDIV": "Dividendos: Empresas com histórico consistente de pagamento de proventos.",
+  "IFNC": "Financeiro: Empresas do setor de intermediação financeira.",
+  "IMOB": "Imobiliário: Empresas do setor de construção civil e exploração imobiliária.",
+  "UTIL": "Utilidade Pública: Energia, água e saneamento (Setor Perene).",
+  "MAT": "Materiais Básicos: Siderurgia, mineração e papel e celulose."
+};
+
 // --- COMPONENTE DE LOGO ---
 const ModalStockLogo = ({ ticker, size = "lg" }: { ticker: string, size?: "sm" | "md" | "lg" }) => {
   const [errorCount, setErrorCount] = useState(0);
@@ -37,39 +54,23 @@ const ModalStockLogo = ({ ticker, size = "lg" }: { ticker: string, size?: "sm" |
   );
 };
 
-// --- FORMATADOR DE TEXTO (CORREÇÃO VISUAL) ---
-// Transforma os símbolos ## e ** da IA em HTML bonito
+// --- FORMATADOR DE TEXTO (VISUAL) ---
 const renderMarkdown = (text: string) => {
   if (!text) return null;
   const lines = text.split('\n');
 
   return lines.map((line, index) => {
-    // 1. Títulos (## Título)
     if (line.trim().startsWith('##')) {
-      return (
-        <h3 key={index} className="text-base font-bold text-gray-900 mt-4 mb-2">
-          {line.replace(/^##\s*/, '')}
-        </h3>
-      );
+      return <h3 key={index} className="text-base font-bold text-gray-900 mt-4 mb-2">{line.replace(/^##\s*/, '')}</h3>;
     }
-
-    // 2. Linhas Vazias
-    if (line.trim() === '') {
-      return <div key={index} className="h-2" />;
-    }
-
-    // 3. Negrito (**Texto**)
+    if (line.trim() === '') return <div key={index} className="h-2" />;
+    
     const parts = line.split('**');
     const content = parts.map((part, i) =>
       i % 2 === 1 ? <strong key={i} className="font-bold text-gray-900">{part}</strong> : part
     );
 
-    // 4. Parágrafos Normais
-    return (
-      <p key={index} className="text-sm text-gray-600 mb-1 leading-relaxed">
-        {content}
-      </p>
-    );
+    return <p key={index} className="text-sm text-gray-600 mb-1 leading-relaxed">{content}</p>;
   });
 };
 
@@ -131,7 +132,6 @@ const StockModal: React.FC<StockModalProps> = ({ stock, user, coherenceScore, on
         <div className="p-6 border-b border-gray-100 flex justify-between items-start bg-gray-50/50">
           <div className="flex items-center gap-4">
             <ModalStockLogo ticker={stock.ticker} size="lg" />
-            
             <div>
               <h2 className="text-2xl font-bold text-gray-900 leading-tight">{stock.ticker}</h2>
               <p className="text-sm text-gray-500 font-medium">{stock.name}</p>
@@ -154,7 +154,7 @@ const StockModal: React.FC<StockModalProps> = ({ stock, user, coherenceScore, on
           </button>
         </div>
 
-        {/* Scrollable Content */}
+        {/* Conteúdo */}
         <div className="p-6 overflow-y-auto space-y-6">
 
           {/* Score Card */}
@@ -168,16 +168,14 @@ const StockModal: React.FC<StockModalProps> = ({ stock, user, coherenceScore, on
             </div>
           </div>
 
-          {/* SEÇÃO IA: LIVO INTELLIGENCE */}
+          {/* Seção IA */}
           <div className="space-y-3">
              <div className="flex items-center justify-between">
                 <h3 className="font-bold text-gray-900 flex items-center gap-2">
                   <Sparkles size={16} className="text-purple-600" />
                   Livo Intelligence
                 </h3>
-                {aiSummary && (
-                  <span className="text-[10px] text-gray-400 uppercase font-bold">Gerado por IA</span>
-                )}
+                {aiSummary && <span className="text-[10px] text-gray-400 uppercase font-bold">Gerado por IA</span>}
              </div>
 
              {!aiSummary && !isLoadingAi && (
@@ -193,19 +191,18 @@ const StockModal: React.FC<StockModalProps> = ({ stock, user, coherenceScore, on
              {isLoadingAi && (
                <div className="p-6 rounded-xl bg-gray-50 border border-gray-100 flex flex-col items-center justify-center text-gray-400 gap-2">
                  <Loader2 size={24} className="animate-spin text-purple-500" />
-                 <span className="text-xs">Consultando dados e gerando análise...</span>
+                 <span className="text-xs">Consultando Google News e gerando análise...</span>
                </div>
              )}
              
              {aiError && (
                <div className="p-3 rounded-xl bg-red-50 text-red-600 text-xs text-center">
-                 Erro ao gerar resumo. Verifique se a chave API está configurada.
+                 Erro ao gerar resumo. Tente novamente mais tarde.
                </div>
              )}
 
              {aiSummary && (
                <div className="p-4 rounded-xl bg-white border border-purple-100 shadow-sm text-sm animate-in fade-in">
-                 {/* AQUI USAMOS O FORMATADOR */}
                  {renderMarkdown(aiSummary)}
                </div>
              )}
@@ -213,7 +210,7 @@ const StockModal: React.FC<StockModalProps> = ({ stock, user, coherenceScore, on
 
           <hr className="border-gray-100" />
 
-          {/* Selos */}
+          {/* Selos (AGORA COM DEFINIÇÕES REAIS) */}
           <div>
             <h4 className="text-sm font-bold text-gray-900 mb-3 flex items-center gap-2">
               <Leaf size={16} className="text-emerald-600"/> Índices e Selos B3
@@ -221,17 +218,26 @@ const StockModal: React.FC<StockModalProps> = ({ stock, user, coherenceScore, on
             
             {stock.tags && stock.tags.length > 0 ? (
               <div className="space-y-2">
-                {stock.tags.map((tag: string) => (
-                  <div key={tag} className="flex items-center gap-3 p-3 rounded-xl border border-gray-100 bg-gray-50">
-                    <div className="w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600 shrink-0">
-                       <CheckCircle2 size={16} />
+                {stock.tags.map((tag: string) => {
+                  // LÓGICA DE RECUPERAÇÃO: Procura a definição ou usa o fallback
+                  const definition = BADGE_DEFINITIONS[tag] || "Índice oficial reconhecido pela B3 e mercado financeiro.";
+                  
+                  return (
+                    <div key={tag} className="flex items-center gap-3 p-3 rounded-xl border border-gray-100 bg-gray-50 group hover:border-emerald-200 transition-colors cursor-help">
+                      <div className="w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600 shrink-0">
+                         <CheckCircle2 size={16} />
+                      </div>
+                      <div>
+                        <span className="font-bold text-gray-900 block text-sm group-hover:text-emerald-700 transition-colors">
+                          {tag}
+                        </span>
+                        <span className="text-xs text-gray-500 leading-tight block">
+                          {definition}
+                        </span>
+                      </div>
                     </div>
-                    <div>
-                      <span className="font-bold text-gray-900 block text-sm">{tag}</span>
-                      <span className="text-xs text-gray-500">Índice oficial reconhecido pela B3.</span>
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             ) : (
               <div className="p-4 bg-gray-50 rounded-xl border border-dashed border-gray-200 text-center">
