@@ -2,8 +2,6 @@ import React, { useState } from "react";
 import { X, ExternalLink, Leaf, AlertTriangle, CheckCircle2, Sparkles, Loader2, Info } from "lucide-react";
 import { UserProfile } from "../../types";
 
-// --- DICIONÁRIO DE ÍNDICES (RESTAURADO) ---
-// Define o significado exato de cada sigla da B3
 const BADGE_DEFINITIONS: Record<string, string> = {
   "ISE": "Índice de Sustentabilidade Empresarial: Empresas com alto padrão de eficiência ESG.",
   "ICO2": "Índice Carbono Eficiente: Empresas comprometidas com a redução de emissões de gases estufa.",
@@ -19,14 +17,16 @@ const BADGE_DEFINITIONS: Record<string, string> = {
   "MAT": "Materiais Básicos: Siderurgia, mineração e papel e celulose."
 };
 
-// --- COMPONENTE DE LOGO ---
-const ModalStockLogo = ({ ticker, size = "lg" }: { ticker: string, size?: "sm" | "md" | "lg" }) => {
+// --- COMPONENTE DE LOGO ATUALIZADO ---
+const ModalStockLogo = ({ ticker, logoUrl, size = "lg" }: { ticker: string, logoUrl?: string, size?: "sm" | "md" | "lg" }) => {
   const [errorCount, setErrorCount] = useState(0);
   
+  // Prioriza a URL que vem da Brapi (logoUrl)
   const sources = [
+    logoUrl,
     `https://raw.githubusercontent.com/thecapybara/br-logos/main/logos/${ticker.toUpperCase()}.png`,
     `https://raw.githubusercontent.com/lbcosta/b3-logos/main/png/${ticker.toUpperCase()}.png`
-  ];
+  ].filter(Boolean) as string[];
 
   const sizeClasses = {
     sm: "w-8 h-8 text-[10px]",
@@ -54,7 +54,6 @@ const ModalStockLogo = ({ ticker, size = "lg" }: { ticker: string, size?: "sm" |
   );
 };
 
-// --- FORMATADOR DE TEXTO (VISUAL) ---
 const renderMarkdown = (text: string) => {
   if (!text) return null;
   const lines = text.split('\n');
@@ -131,7 +130,8 @@ const StockModal: React.FC<StockModalProps> = ({ stock, user, coherenceScore, on
         {/* Header */}
         <div className="p-6 border-b border-gray-100 flex justify-between items-start bg-gray-50/50">
           <div className="flex items-center gap-4">
-            <ModalStockLogo ticker={stock.ticker} size="lg" />
+            {/* AQUI ESTÁ A MUDANÇA: Passamos stock.logo */}
+            <ModalStockLogo ticker={stock.ticker} logoUrl={stock.logo} size="lg" />
             <div>
               <h2 className="text-2xl font-bold text-gray-900 leading-tight">{stock.ticker}</h2>
               <p className="text-sm text-gray-500 font-medium">{stock.name}</p>
@@ -210,7 +210,7 @@ const StockModal: React.FC<StockModalProps> = ({ stock, user, coherenceScore, on
 
           <hr className="border-gray-100" />
 
-          {/* Selos (AGORA COM DEFINIÇÕES REAIS) */}
+          {/* Selos */}
           <div>
             <h4 className="text-sm font-bold text-gray-900 mb-3 flex items-center gap-2">
               <Leaf size={16} className="text-emerald-600"/> Índices e Selos B3
@@ -219,9 +219,7 @@ const StockModal: React.FC<StockModalProps> = ({ stock, user, coherenceScore, on
             {stock.tags && stock.tags.length > 0 ? (
               <div className="space-y-2">
                 {stock.tags.map((tag: string) => {
-                  // LÓGICA DE RECUPERAÇÃO: Procura a definição ou usa o fallback
                   const definition = BADGE_DEFINITIONS[tag] || "Índice oficial reconhecido pela B3 e mercado financeiro.";
-                  
                   return (
                     <div key={tag} className="flex items-center gap-3 p-3 rounded-xl border border-gray-100 bg-gray-50 group hover:border-emerald-200 transition-colors cursor-help">
                       <div className="w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600 shrink-0">
