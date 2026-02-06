@@ -6,13 +6,16 @@ import {
   Compass,
   Home,
   Leaf,
-  Loader2
+  Loader2,
+  ShieldCheck,
+  Info
 } from "lucide-react";
 
 import Onboarding from "./components/onboarding";
 import AddTransactionModal from "./components/modals/AddTransactionModal";
 import StockModal from "./components/modals/StockModal";
 import CustomStrategyModal from "./components/modals/CustomStrategyModal";
+import MethodologyModal from "./components/modals/MethodologyModal"; // <--- NOVO IMPORT
 import HomeTab from "./components/layout/tabs/HomeTab";
 import PortfolioDashboard from "./components/layout/tabs/PortfolioDashboard";
 import { Transaction, Holding, UserProfile } from "./types";
@@ -50,8 +53,9 @@ export default function App() {
   // Modais de Ação
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [transactionModalType, setTransactionModalType] = useState<"BUY" | "SELL">("BUY");
- const [selectedStock, setSelectedStock] = useState<any | null>(null);
+  const [selectedStock, setSelectedStock] = useState<any | null>(null); // <--- CORRIGIDO: usa any para aceitar objeto completo
   const [isCustomStrategyOpen, setIsCustomStrategyOpen] = useState(false);
+  const [isMethodologyOpen, setIsMethodologyOpen] = useState(false); // <--- NOVO STATE
 
   // Busca de Mercado (Aba Explorar)
   const [marketStocks, setMarketStocks] = useState<any[]>([]);
@@ -291,6 +295,24 @@ export default function App() {
         {activeTab === "market" && (
           <div className="space-y-4 pb-32 animate-in fade-in">
             <div className="sticky top-20 z-10 space-y-2">
+               
+               {/* NOVO: Botão de Metodologia */}
+               <button 
+                 onClick={() => setIsMethodologyOpen(true)}
+                 className="w-full bg-emerald-900/5 hover:bg-emerald-900/10 border border-emerald-900/10 p-3 rounded-xl flex items-center justify-between group transition-all"
+               >
+                 <div className="flex items-center gap-2">
+                   <div className="bg-white p-1.5 rounded-lg shadow-sm">
+                     <ShieldCheck size={16} className="text-emerald-700" />
+                   </div>
+                   <div className="text-left">
+                     <p className="text-xs font-bold text-gray-800 group-hover:text-emerald-800">Como calculamos a Nota Livo?</p>
+                     <p className="text-[10px] text-gray-500">Conheça os critérios da B3 que usamos.</p>
+                   </div>
+                 </div>
+                 <Info size={14} className="text-gray-400 group-hover:text-emerald-600" />
+               </button>
+
                {/* Barra de Busca */}
                <div className="bg-white p-4 rounded-2xl border border-gray-100 flex gap-2 shadow-sm">
                   <Search className="text-gray-400" />
@@ -345,22 +367,25 @@ export default function App() {
                 return (
                  <div
                    key={stock.ticker}
-                  onClick={() => {
-    // Objeto COMPLETO com dados da B3
-    const fullStockData = {
-        ...stock,
-        description: stock.description || `Ações da ${stock.name}`,
-        esgScore: stock.score,  // Nota B3
-        tags: stock.badges,     // Tags B3 (ISE, ICO2...) <--- O IMPORTANTE TÁ AQUI
-        coherenceScore: userPersonalScore,
-        volatility: "Média", 
-        dividendYield: stock.dividendYield || 0, 
-        peRatio: stock.peRatio || 0, 
-        roe: stock.roe || 0
-    };
-    // Em vez de salvar só o nome, salvamos o objeto inteiro na memória
-    setSelectedStock(fullStockData);
-}}
+                   onClick={() => {
+                      // PREPARA DADOS PARA O MODAL (Com dados B3 frescos)
+                      const fullStockData = {
+                         ...stock,
+                         description: stock.description || `Ações da ${stock.name}`,
+                         // Injeta os dados da B3 no Modal
+                         esgScore: stock.score, 
+                         tags: stock.badges, 
+                         coherenceScore: userPersonalScore,
+                         // Fallbacks financeiros
+                         volatility: "Média", 
+                         dividendYield: stock.dividendYield || 0, 
+                         peRatio: stock.peRatio || 0, 
+                         roe: stock.roe || 0
+                      };
+                      // Hack seguro para garantir que o modal ache o dado
+                      STOCKS_DB.push(fullStockData);
+                      setSelectedStock(fullStockData); // <--- CORRIGIDO
+                   }}
                    className="bg-white p-4 rounded-2xl border border-gray-100 flex justify-between items-center cursor-pointer hover:border-emerald-200 hover:shadow-md transition-all"
                  >
                     <div className="flex items-center gap-3">
@@ -425,17 +450,17 @@ export default function App() {
         />
       )}
       
-{/* MODAL DE DETALHES DA AÇÃO (CORRIGIDO) */}
-{selectedStock && (
-<StockModal
-    // Passa direto o objeto que clicamos (que tem os dados novos)
-    stock={selectedStock}
-    user={userProfile}
-    // Usa a nota que já calculamos no clique
-    coherenceScore={selectedStock.coherenceScore || 0}
-    onClose={() => setSelectedStock(null)}
-/>
-)}
+      {/* MODAL DE DETALHES DA AÇÃO (CORRIGIDO) */}
+      {selectedStock && (
+        <StockModal
+          // Passa direto o objeto que clicamos (que tem os dados novos)
+          stock={selectedStock}
+          user={userProfile}
+          // Usa a nota que já calculamos no clique
+          coherenceScore={selectedStock.coherenceScore || 0}
+          onClose={() => setSelectedStock(null)}
+        />
+      )}
 
       {isCustomStrategyOpen && (
         <CustomStrategyModal
@@ -443,6 +468,11 @@ export default function App() {
           onClose={() => setIsCustomStrategyOpen(false)}
           onSave={handleSaveCustomStrategy}
         />
+      )}
+
+      {/* MODAL METODOLOGIA */}
+      {isMethodologyOpen && (
+        <MethodologyModal onClose={() => setIsMethodologyOpen(false)} />
       )}
     </div>
   );
