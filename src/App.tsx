@@ -37,16 +37,14 @@ const STOCK_NAMES_FIX: Record<string, string> = {
   "GOLL4": "Gol Linhas Aéreas", "OIBR3": "Oi S.A.", "CASH3": "Méliuz"
 };
 
-// --- COMPONENTE DE LOGO ATUALIZADO (Aceita URL da Brapi) ---
-const StockLogo = ({ ticker, logoUrl, size = "md" }: { ticker: string, logoUrl?: string, size?: "sm" | "md" | "lg" }) => {
+// --- COMPONENTE DE LOGO (REVERTIDO PARA GITHUB ONLY) ---
+const StockLogo = ({ ticker, size = "md" }: { ticker: string, size?: "sm" | "md" | "lg" }) => {
   const [errorCount, setErrorCount] = useState(0);
   
-  // Fontes: 1. Brapi (se houver), 2. GitHub Capybara, 3. GitHub Lbcosta
   const sources = [
-    logoUrl, 
     `https://raw.githubusercontent.com/thecapybara/br-logos/main/logos/${ticker.toUpperCase()}.png`,
     `https://raw.githubusercontent.com/lbcosta/b3-logos/main/png/${ticker.toUpperCase()}.png`
-  ].filter(Boolean) as string[]; // Remove undefined se não tiver logoUrl
+  ];
 
   const sizeClasses = { sm: "w-8 h-8 text-[10px]", md: "w-10 h-10 text-xs", lg: "w-14 h-14 text-sm" };
 
@@ -59,12 +57,7 @@ const StockLogo = ({ ticker, logoUrl, size = "md" }: { ticker: string, logoUrl?:
   }
   return (
     <div className={`${sizeClasses[size]} rounded-lg bg-white flex items-center justify-center overflow-hidden border border-gray-100 shadow-sm p-0.5`}>
-      <img 
-        src={sources[errorCount]} 
-        alt={ticker} 
-        className="w-full h-full object-contain" 
-        onError={() => setErrorCount(prev => prev + 1)} 
-      />
+      <img src={sources[errorCount]} alt={ticker} className="w-full h-full object-contain" onError={() => setErrorCount(prev => prev + 1)} />
     </div>
   );
 };
@@ -81,6 +74,7 @@ export default function App() {
     try { return JSON.parse(localStorage.getItem("transactions") || "[]"); } catch { return []; }
   });
 
+  // Mantém a lógica de KnownStocks para evitar o erro de R$ 0
   const [knownStocks, setKnownStocks] = useState<any[]>(STOCKS_DB);
 
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -167,6 +161,7 @@ export default function App() {
     return enriched.filter(stock => !filterEsgOnly || stock.score >= 50);
   }, [marketStocks, filterEsgOnly, esgMap]);
 
+  // Mantém a correção do assetType aqui
   const handleAddTransaction = (t: Omit<Transaction, "id">, extraStockData?: any) => {
     const updated = [...transactions, { ...t, id: Math.random().toString(36).substr(2, 9) }];
     setTransactions(updated);
@@ -176,7 +171,7 @@ export default function App() {
       setKnownStocks(prev => {
         const exists = prev.find(s => s.ticker === extraStockData.ticker);
         if (exists) {
-            return prev.map(s => s.ticker === extraStockData.ticker ? { ...s, price: extraStockData.price, logo: extraStockData.logo || s.logo } : s);
+            return prev.map(s => s.ticker === extraStockData.ticker ? { ...s, price: extraStockData.price } : s);
         }
         return [...prev, {
             ...extraStockData,
@@ -277,8 +272,7 @@ export default function App() {
                    className="bg-white p-4 rounded-2xl border border-gray-100 flex justify-between items-center cursor-pointer hover:border-emerald-200 hover:shadow-md transition-all"
                  >
                     <div className="flex items-center gap-3 w-full">
-                        {/* AQUI ESTÁ A MUDANÇA: Passamos stock.logo para o componente */}
-                        <div className="shrink-0"><StockLogo ticker={stock.ticker} logoUrl={stock.logo} size="md" /></div>
+                        <div className="shrink-0"><StockLogo ticker={stock.ticker} size="md" /></div>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-1">
                              <h4 className="font-bold text-gray-900">{stock.ticker}</h4>
