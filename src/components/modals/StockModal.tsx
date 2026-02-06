@@ -1,5 +1,4 @@
 import React, { useState } from "react";
-// CORREÇÃO AQUI: Adicionei "Info" na lista de imports
 import { X, ExternalLink, Leaf, AlertTriangle, CheckCircle2, Sparkles, Loader2, Info } from "lucide-react";
 import { UserProfile } from "../../types";
 
@@ -36,6 +35,42 @@ const ModalStockLogo = ({ ticker, size = "lg" }: { ticker: string, size?: "sm" |
       />
     </div>
   );
+};
+
+// --- FORMATADOR DE TEXTO (CORREÇÃO VISUAL) ---
+// Transforma os símbolos ## e ** da IA em HTML bonito
+const renderMarkdown = (text: string) => {
+  if (!text) return null;
+  const lines = text.split('\n');
+
+  return lines.map((line, index) => {
+    // 1. Títulos (## Título)
+    if (line.trim().startsWith('##')) {
+      return (
+        <h3 key={index} className="text-base font-bold text-gray-900 mt-4 mb-2">
+          {line.replace(/^##\s*/, '')}
+        </h3>
+      );
+    }
+
+    // 2. Linhas Vazias
+    if (line.trim() === '') {
+      return <div key={index} className="h-2" />;
+    }
+
+    // 3. Negrito (**Texto**)
+    const parts = line.split('**');
+    const content = parts.map((part, i) =>
+      i % 2 === 1 ? <strong key={i} className="font-bold text-gray-900">{part}</strong> : part
+    );
+
+    // 4. Parágrafos Normais
+    return (
+      <p key={index} className="text-sm text-gray-600 mb-1 leading-relaxed">
+        {content}
+      </p>
+    );
+  });
 };
 
 interface StockModalProps {
@@ -119,7 +154,7 @@ const StockModal: React.FC<StockModalProps> = ({ stock, user, coherenceScore, on
           </button>
         </div>
 
-        {/* Conteúdo */}
+        {/* Scrollable Content */}
         <div className="p-6 overflow-y-auto space-y-6">
 
           {/* Score Card */}
@@ -133,7 +168,7 @@ const StockModal: React.FC<StockModalProps> = ({ stock, user, coherenceScore, on
             </div>
           </div>
 
-          {/* Seção IA */}
+          {/* SEÇÃO IA: LIVO INTELLIGENCE */}
           <div className="space-y-3">
              <div className="flex items-center justify-between">
                 <h3 className="font-bold text-gray-900 flex items-center gap-2">
@@ -169,8 +204,9 @@ const StockModal: React.FC<StockModalProps> = ({ stock, user, coherenceScore, on
              )}
 
              {aiSummary && (
-               <div className="p-4 rounded-xl bg-white border border-purple-100 shadow-sm text-sm text-gray-700 leading-relaxed whitespace-pre-line animate-in fade-in">
-                 {aiSummary}
+               <div className="p-4 rounded-xl bg-white border border-purple-100 shadow-sm text-sm animate-in fade-in">
+                 {/* AQUI USAMOS O FORMATADOR */}
+                 {renderMarkdown(aiSummary)}
                </div>
              )}
           </div>
