@@ -94,10 +94,6 @@ const MethodologyModal: React.FC<Props> = ({ onClose }) => {
             </table>
           </div>
 
-          <p className="text-xs text-center text-gray-500 italic">
-            <strong>Nota 100:</strong> Indica que a empresa atende a todos os critérios e participa de todos os índices monitorados.
-          </p>
-
           {/* Links e Fontes */}
           <div className="border-t border-gray-100 pt-4">
             <h4 className="font-bold text-gray-900 mb-3 flex items-center gap-2">
