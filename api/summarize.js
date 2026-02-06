@@ -1,8 +1,7 @@
 // api/summarize.js
-// Conecta com a OpenAI para gerar resumos inteligentes
+// Conecta com a OpenAI para gerar resumos inteligentes (Versão Anti-Alucinação)
 
 module.exports = async (req, res) => {
-  // CORS e Cache
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST');
   
@@ -11,26 +10,30 @@ module.exports = async (req, res) => {
   }
 
   const { ticker, name } = req.body;
-  
-  // Pegue sua chave em https://platform.openai.com/api-keys
-  // Adicione no .env da Vercel como OPENAI_API_KEY
   const apiKey = process.env.OPENAI_API_KEY;
 
   if (!apiKey) {
-    return res.status(500).json({ error: "Chave OpenAI não configurada no servidor." });
+    return res.status(500).json({ error: "Chave OpenAI não configurada." });
   }
 
   try {
+    // PROMPT REFINADO (ANTI-ALUCINAÇÃO)
+    // Adicionamos regras de lógica da B3 para ajudar a IA a não errar o tipo de ativo.
     const prompt = `
-      Atue como um analista financeiro experiente e direto da Livo.
-      Escreva um resumo sobre a empresa "${name}" (Ticker: ${ticker}) listada na B3.
-      
-      Estrutura da resposta (use Markdown leve):
-      1. **O que é:** Explique o modelo de negócio em 1 ou 2 frases simples.
-      2. **Setor:** Qual o setor principal.
-      3. **Contexto Recente:** Uma frase sobre o momento atual da empresa ou uma notícia relevante recente (sem data, focado em contexto de mercado).
+      Atue como um analista financeiro sênior especializado na Bolsa Brasileira (B3).
+      Sua tarefa é explicar o ativo: "${name}" (Ticker: ${ticker}).
 
-      Mantenha o tom profissional, educativo, mas acessível. Máximo de 150 palavras.
+      REGRAS CRÍTICAS DE IDENTIFICAÇÃO (Siga estritamente):
+      1. Se o ticker termina em **34** (ex: AMZO34, TSLA34, AAPL34), ISSO É UM **BDR** (Brazilian Depositary Receipt) de uma empresa estrangeira. NÃO é um Fundo Imobiliário.
+      2. Se o ticker termina em **11**, verifique se é um Fundo Imobiliário (FII), uma Unit ou um ETF.
+      3. Se o nome for desconhecido, baseie-se no Ticker.
+
+      Estrutura da resposta (Markdown leve):
+      1. **O que é:** Defina o ativo com precisão técnica (ex: "É um BDR que representa ações da Amazon...", "É uma ação ordinária da...", "É um Fundo Imobiliário focado em...").
+      2. **Setor:** O setor de atuação real da empresa subjacente.
+      3. **Contexto:** Uma frase sobre o momento atual da empresa ou do setor (contexto global se for BDR).
+
+      Seja direto, educativo e profissional. Máximo de 150 palavras.
     `;
 
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
@@ -40,10 +43,10 @@ module.exports = async (req, res) => {
         'Authorization': `Bearer ${apiKey}`
       },
       body: JSON.stringify({
-        model: "gpt-4o-mini", // Modelo rápido e barato
+        model: "gpt-4o-mini", // Modelo rápido e inteligente
         messages: [{ role: "user", content: prompt }],
-        temperature: 0.7,
-        max_tokens: 250
+        temperature: 0.3, // Baixei a temperatura para 0.3 para ela ser MENOS criativa e MAIS exata
+        max_tokens: 300
       })
     });
 
@@ -58,6 +61,6 @@ module.exports = async (req, res) => {
 
   } catch (error) {
     console.error("Erro OpenAI:", error);
-    return res.status(500).json({ error: "Não foi possível gerar o resumo agora." });
+    return res.status(500).json({ error: "Não foi possível gerar a análise no momento." });
   }
 };
