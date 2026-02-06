@@ -1,5 +1,5 @@
 // api/summarize.js
-// Conecta com a OpenAI para gerar resumos inteligentes (Versão Anti-Alucinação)
+// V3: Com Módulo de Notícias em Tempo Real (Google News RSS)
 
 module.exports = async (req, res) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -17,23 +17,58 @@ module.exports = async (req, res) => {
   }
 
   try {
-    // PROMPT REFINADO (ANTI-ALUCINAÇÃO)
-    // Adicionamos regras de lógica da B3 para ajudar a IA a não errar o tipo de ativo.
+    // --- PASSO 1: BUSCAR NOTÍCIAS RECENTES (GOOGLE NEWS RSS) ---
+    // Buscamos por "Nome da Empresa" + "Ações" ou "Mercado" para filtrar fofoca e pegar business
+    const query = encodeURIComponent(`${name} ações mercado financeiro`);
+    const rssUrl = `https://news.google.com/rss/search?q=${query}&hl=pt-BR&gl=BR&ceid=BR:pt-419`;
+    
+    let newsContext = "Não foram encontradas notícias recentes.";
+    
+    try {
+      const rssResponse = await fetch(rssUrl);
+      const rssText = await rssResponse.text();
+      
+      // Parser simples de XML via Regex (para não precisar instalar bibliotecas extras)
+      const items = rssText.match(/<item>[\s\S]*?<\/item>/g) || [];
+      
+      // Pega as 3 notícias mais recentes
+      const recentNews = items.slice(0, 3).map(item => {
+        const titleMatch = item.match(/<title>(.*?)<\/title>/);
+        const dateMatch = item.match(/<pubDate>(.*?)<\/pubDate>/);
+        return {
+          title: titleMatch ? titleMatch[1] : "Sem título",
+          date: dateMatch ? new Date(dateMatch[1]).toLocaleDateString('pt-BR') : "Data desc."
+        };
+      });
+
+      if (recentNews.length > 0) {
+        newsContext = recentNews.map(n => `- [${n.date}] ${n.title}`).join('\n');
+      }
+    } catch (newsError) {
+      console.warn("Erro ao buscar notícias (seguiremos sem elas):", newsError);
+    }
+
+    // --- PASSO 2: GERAR RESUMO COM CONTEXTO REAL ---
     const prompt = `
-      Atue como um analista financeiro sênior especializado na Bolsa Brasileira (B3).
-      Sua tarefa é explicar o ativo: "${name}" (Ticker: ${ticker}).
+      Atue como um analista financeiro sênior da Bolsa Brasileira (B3).
+      Analise o ativo: "${name}" (Ticker: ${ticker}).
 
-      REGRAS CRÍTICAS DE IDENTIFICAÇÃO (Siga estritamente):
-      1. Se o ticker termina em **34** (ex: AMZO34, TSLA34, AAPL34), ISSO É UM **BDR** (Brazilian Depositary Receipt) de uma empresa estrangeira. NÃO é um Fundo Imobiliário.
-      2. Se o ticker termina em **11**, verifique se é um Fundo Imobiliário (FII), uma Unit ou um ETF.
-      3. Se o nome for desconhecido, baseie-se no Ticker.
+      Use as seguintes NOTÍCIAS RECENTES reais como base para o campo "Contexto Recente":
+      ---
+      ${newsContext}
+      ---
 
-      Estrutura da resposta (Markdown leve):
-      1. **O que é:** Defina o ativo com precisão técnica (ex: "É um BDR que representa ações da Amazon...", "É uma ação ordinária da...", "É um Fundo Imobiliário focado em...").
-      2. **Setor:** O setor de atuação real da empresa subjacente.
-      3. **Contexto:** Uma frase sobre o momento atual da empresa ou do setor (contexto global se for BDR).
+      REGRAS DE IDENTIDADE (Anti-Alucinação):
+      1. Ticker final 34 = BDR (Empresa Estrangeira).
+      2. Ticker final 11 = Verifique se é FII (Imobiliário), Unit ou ETF.
+      3. Se não houver notícias relevantes acima, fale sobre o setor em geral.
 
-      Seja direto, educativo e profissional. Máximo de 150 palavras.
+      Estrutura da resposta (Markdown):
+      1. **O que é:** Definição técnica precisa do ativo.
+      2. **Setor:** Setor de atuação.
+      3. **Contexto Recente:** Resuma os eventos das notícias acima em 1 frase coesa. Se as notícias forem ruins, diga. Se forem boas, diga. (Não cite datas exatas, sintetize o momento).
+
+      Máximo de 150 palavras. Tom profissional.
     `;
 
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
@@ -43,24 +78,21 @@ module.exports = async (req, res) => {
         'Authorization': `Bearer ${apiKey}`
       },
       body: JSON.stringify({
-        model: "gpt-4o-mini", // Modelo rápido e inteligente
+        model: "gpt-4o-mini",
         messages: [{ role: "user", content: prompt }],
-        temperature: 0.3, // Baixei a temperatura para 0.3 para ela ser MENOS criativa e MAIS exata
+        temperature: 0.3, // Baixa temperatura para ser fiel às notícias
         max_tokens: 300
       })
     });
 
     const data = await response.json();
 
-    if (data.error) {
-      throw new Error(data.error.message);
-    }
+    if (data.error) throw new Error(data.error.message);
 
-    const summary = data.choices[0].message.content;
-    return res.status(200).json({ summary });
+    return res.status(200).json({ summary: data.choices[0].message.content });
 
   } catch (error) {
-    console.error("Erro OpenAI:", error);
-    return res.status(500).json({ error: "Não foi possível gerar a análise no momento." });
+    console.error("Erro Geral:", error);
+    return res.status(500).json({ error: "Erro ao gerar análise." });
   }
 };
