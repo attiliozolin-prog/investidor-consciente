@@ -22,18 +22,29 @@ import { Transaction, Holding, UserProfile } from "./types";
 import { STOCKS_DB } from "./data/stocks";
 import { MarketService, EsgScoreData } from "./services/market";
 
-// --- COMPONENTE DE LOGO INTELIGENTE ---
-// Busca logos de repositórios open-source confiáveis.
-const StockLogo = ({ ticker, name, size = "md" }: { ticker: string, name: string, size?: "sm" | "md" | "lg" }) => {
+// --- DICIONÁRIO DE NOMES (RESTITUIDO) ---
+// Garante nomes bonitos para as principais, já que estamos sem a HG.
+const STOCK_NAMES_FIX: Record<string, string> = {
+  "VALE3": "Vale S.A.", "PETR4": "Petrobras PN", "PETR3": "Petrobras ON",
+  "ITUB4": "Itaú Unibanco", "BBDC4": "Bradesco PN", "BBAS3": "Banco do Brasil",
+  "WEGE3": "WEG S.A.", "MGLU3": "Magazine Luiza", "JBSS3": "JBS",
+  "SUZB3": "Suzano", "GGBR4": "Gerdau PN", "RENT3": "Localiza",
+  "LREN3": "Lojas Renner", "PRIO3": "Prio", "HAPV3": "Hapvida",
+  "RDOR3": "Rede D'Or", "RAIL3": "Rumo S.A.", "ELET3": "Eletrobras ON",
+  "B3SA3": "B3 S.A.", "BPAC11": "BTG Pactual", "CMIG4": "Cemig PN",
+  "ITSA4": "Itaúsa", "VIVT3": "Vivo Telefônica", "TIMS3": "TIM Brasil",
+  "CSAN3": "Cosan"
+};
+
+// --- COMPONENTE DE LOGO (SOMENTE INICIAIS OU GITHUB) ---
+// Removemos a tentativa de usar o logo da API para evitar o ícone roxo genérico.
+const StockLogo = ({ ticker, size = "md" }: { ticker: string, size?: "sm" | "md" | "lg" }) => {
   const [errorCount, setErrorCount] = useState(0);
   
+  // Fontes: Apenas repositórios limpos. Se falhar, vai pra inicial.
   const sources = [
-    // Repositório 1: The Capybara (Logos brasileiros de alta qualidade)
     `https://raw.githubusercontent.com/thecapybara/br-logos/main/logos/${ticker.toUpperCase()}.png`,
-    // Repositório 2: B3 Logos (Backup)
-    `https://raw.githubusercontent.com/lbcosta/b3-logos/main/png/${ticker.toUpperCase()}.png`,
-    // Repositório 3: Tentativa genérica pelo primeiro nome
-    `https://logospng.org/download/${name.split(' ')[0].toLowerCase()}/${name.split(' ')[0].toLowerCase()}-logo-icon.png`
+    `https://raw.githubusercontent.com/lbcosta/b3-logos/main/png/${ticker.toUpperCase()}.png`
   ];
 
   const sizeClasses = {
@@ -42,7 +53,7 @@ const StockLogo = ({ ticker, name, size = "md" }: { ticker: string, name: string
     lg: "w-14 h-14 text-sm"
   };
 
-  // Se tudo falhar, exibe Avatar com iniciais (Elegante e nunca quebra)
+  // Se falhar nos repositórios, mostra Avatar (Iniciais)
   if (errorCount >= sources.length) {
     return (
       <div className={`${sizeClasses[size]} rounded-lg bg-emerald-50 text-emerald-700 font-bold flex items-center justify-center border border-emerald-100 select-none`}>
@@ -55,7 +66,7 @@ const StockLogo = ({ ticker, name, size = "md" }: { ticker: string, name: string
     <div className={`${sizeClasses[size]} rounded-lg bg-white flex items-center justify-center overflow-hidden border border-gray-100 shadow-sm p-0.5`}>
       <img
         src={sources[errorCount]}
-        alt={name}
+        alt={ticker}
         className="w-full h-full object-contain"
         onError={() => setErrorCount(prev => prev + 1)}
       />
@@ -64,7 +75,6 @@ const StockLogo = ({ ticker, name, size = "md" }: { ticker: string, name: string
 };
 
 export default function App() {
-  // 1. STATES
   const [activeTab, setActiveTab] = useState("home");
   const [showValues, setShowValues] = useState(true);
 
@@ -90,7 +100,6 @@ export default function App() {
   const [esgMap, setEsgMap] = useState<Record<string, EsgScoreData>>({});
   const [isEsgMapLoaded, setIsEsgMapLoaded] = useState(false);
 
-  // 2. EFFECTS
   useEffect(() => {
     MarketService.getEsgScores().then(map => {
       setEsgMap(map);
@@ -102,7 +111,6 @@ export default function App() {
     if (activeTab === "market") {
       const delayDebounceFn = setTimeout(() => {
         setIsLoadingMarket(true);
-        // A busca agora passa pelo backend que usa HG Brasil
         MarketService.searchStocks(searchTerm)
           .then(data => setMarketStocks(data))
           .finally(() => setIsLoadingMarket(false));
@@ -111,7 +119,6 @@ export default function App() {
     }
   }, [activeTab, searchTerm]);
 
-  // 3. LOGIC
   const holdings = useMemo(() => {
     const map = new Map<string, { qty: number; totalCost: number }>();
     transactions.forEach((t) => {
@@ -142,9 +149,14 @@ export default function App() {
 
   const displayedStocks = useMemo(() => {
     const enriched = marketStocks.map(stock => {
-      // Cruzamento de dados: Preço/Nome da HG (Backend) + Score da B3 (EsgMap)
       const b3Data = esgMap[stock.ticker] || { score: 10, badges: [] };
-      return { ...stock, ...b3Data };
+      
+      // LÓGICA DE NOME: Usa o dicionário se tiver, senão usa o que veio da API
+      let displayName = STOCK_NAMES_FIX[stock.ticker] || stock.name;
+      // Remove ".SA" se vier no nome (comum na Brapi)
+      if (displayName.endsWith('.SA')) displayName = displayName.replace('.SA', '');
+
+      return { ...stock, name: displayName, ...b3Data };
     });
 
     return enriched.filter(stock => {
@@ -153,7 +165,6 @@ export default function App() {
     });
   }, [marketStocks, filterEsgOnly, esgMap]);
 
-  // 4. HANDLERS
   const handleAddTransaction = (t: Omit<Transaction, "id">) => {
     const updated = [...transactions, { ...t, id: Math.random().toString(36).substr(2, 9) }];
     setTransactions(updated);
@@ -252,15 +263,13 @@ export default function App() {
                  >
                     <div className="flex items-center gap-3 w-full">
                         <div className="shrink-0">
-                           {/* LOGO: Puxa do GitHub (limpo) e ignora Brapi */}
-                           <StockLogo ticker={stock.ticker} name={stock.name} />
+                           <StockLogo ticker={stock.ticker} size="md" />
                         </div>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-1">
                              <h4 className="font-bold text-gray-900">{stock.ticker}</h4>
                              {stock.badges && stock.badges.length > 0 && <Leaf size={12} className="text-emerald-500" fill="currentColor"/>}
                           </div>
-                          {/* NOME: Agora vem limpo da HG Brasil */}
                           <p className="text-xs text-gray-500 truncate">{stock.name}</p>
                         </div>
                         <div className="text-right shrink-0">
@@ -271,7 +280,7 @@ export default function App() {
                  </div>
               )})}
             </div>
-            <div className="text-center text-[10px] text-gray-400 mt-4">Dados de mercado: Brapi + HG Brasil. | Scores ESG: B3.</div>
+            <div className="text-center text-[10px] text-gray-400 mt-4">Dados: Brapi. | Scores: B3.</div>
           </div>
         )}
       </main>
