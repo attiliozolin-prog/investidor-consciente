@@ -345,25 +345,22 @@ export default function App() {
                 return (
                  <div
                    key={stock.ticker}
-                   onClick={() => {
-                      // PREPARA DADOS PARA O MODAL
-                      const fullStockData = {
-                         ...stock,
-                         description: stock.description || `Ações da ${stock.name}`,
-                         // Injeta os dados da B3 no Modal
-                         esgScore: stock.score, 
-                         tags: stock.badges, 
-                         coherenceScore: userPersonalScore,
-                         // Fallbacks financeiros
-                         volatility: "Média", 
-                         dividendYield: stock.dividendYield || 0, 
-                         peRatio: stock.peRatio || 0, 
-                         roe: stock.roe || 0
-                      };
-                      // Hack seguro para garantir que o modal ache o dado
-                      STOCKS_DB.push(fullStockData);
-                      setSelectedStockTicker(stock.ticker);
-                   }}
+                  onClick={() => {
+    // Objeto COMPLETO com dados da B3
+    const fullStockData = {
+        ...stock,
+        description: stock.description || `Ações da ${stock.name}`,
+        esgScore: stock.score,  // Nota B3
+        tags: stock.badges,     // Tags B3 (ISE, ICO2...) <--- O IMPORTANTE TÁ AQUI
+        coherenceScore: userPersonalScore,
+        volatility: "Média", 
+        dividendYield: stock.dividendYield || 0, 
+        peRatio: stock.peRatio || 0, 
+        roe: stock.roe || 0
+    };
+    // Em vez de salvar só o nome, salvamos o objeto inteiro na memória
+    setSelectedStock(fullStockData);
+}}
                    className="bg-white p-4 rounded-2xl border border-gray-100 flex justify-between items-center cursor-pointer hover:border-emerald-200 hover:shadow-md transition-all"
                  >
                     <div className="flex items-center gap-3">
@@ -428,21 +425,17 @@ export default function App() {
         />
       )}
       
-      {selectedStockTicker && (
-        <StockModal
-          // CORREÇÃO CRÍTICA DE CRASH: Busca no STOCKS_DB se não achar no rankedStocks
-          stock={
-            rankedStocks.find((s) => s.ticker === selectedStockTicker) || 
-            (STOCKS_DB.find((s) => s.ticker === selectedStockTicker) as any)
-          }
-          user={userProfile}
-          coherenceScore={
-            rankedStocks.find((s) => s.ticker === selectedStockTicker)?.coherenceScore || 
-            (STOCKS_DB.find((s) => s.ticker === selectedStockTicker) as any)?.coherenceScore || 0
-          }
-          onClose={() => setSelectedStockTicker(null)}
-        />
-      )}
+{/* MODAL DE DETALHES DA AÇÃO (CORRIGIDO) */}
+{selectedStock && (
+<StockModal
+    // Passa direto o objeto que clicamos (que tem os dados novos)
+    stock={selectedStock}
+    user={userProfile}
+    // Usa a nota que já calculamos no clique
+    coherenceScore={selectedStock.coherenceScore || 0}
+    onClose={() => setSelectedStock(null)}
+/>
+)}
 
       {isCustomStrategyOpen && (
         <CustomStrategyModal
