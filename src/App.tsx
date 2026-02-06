@@ -177,29 +177,26 @@ export default function App() {
     return enriched.filter(stock => !filterEsgOnly || stock.score >= 50);
   }, [marketStocks, filterEsgOnly, esgMap]);
 
-  // --- FUNÇÃO CRÍTICA: ADICIONAR TRANSAÇÃO ---
+  // --- FUNÇÃO CRÍTICA ATUALIZADA ---
   const handleAddTransaction = (t: Omit<Transaction, "id">, extraStockData?: any) => {
-    // 1. Salva a transação
     const updated = [...transactions, { ...t, id: Math.random().toString(36).substr(2, 9) }];
     setTransactions(updated);
     localStorage.setItem("transactions", JSON.stringify(updated));
 
-    // 2. CORREÇÃO "ZERO REAIS": 
-    // Se recebemos dados extras da stock (do modal), atualizamos a lista `knownStocks`
     if (extraStockData) {
       setKnownStocks(prev => {
-        // Verifica se já conhecemos essa stock
         const exists = prev.find(s => s.ticker === extraStockData.ticker);
         if (exists) {
-            // Atualiza preço se já existe
+            // Se já existe, atualiza preço se necessário
             return prev.map(s => s.ticker === extraStockData.ticker ? { ...s, price: extraStockData.price } : s);
         }
-        // Adiciona nova stock à lista de rastreio
+        // Se é novo, adiciona à lista para que o cálculo funcione
         return [...prev, {
             ...extraStockData,
-            esgScore: extraStockData.esgScore || 50, // Default ESG
+            esgScore: extraStockData.esgScore || 50,
             financialScore: 60,
-            assetType: extraStockData.stock?.endsWith('11') ? 'fii' : 'stock'
+            // CORREÇÃO AQUI: Prioriza o assetType explícito (ex: 'fixed_income')
+            assetType: extraStockData.assetType || (extraStockData.stock?.endsWith('11') ? 'fii' : 'stock')
         }];
       });
     }
