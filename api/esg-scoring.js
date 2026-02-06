@@ -88,7 +88,7 @@ module.exports = async (req, res) => {
     esgPortfolios.flat().forEach(item => uniqueTickers.add(item.ticker));
 
     const scores = Array.from(uniqueTickers).map(ticker => {
-      let score = 5; // Piso
+      let score = 10; // Piso
       let badges = [];
 
       INDICES.forEach((index, i) => {
