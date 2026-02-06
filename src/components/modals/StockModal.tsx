@@ -1,8 +1,9 @@
 import React, { useState } from "react";
-import { X, ExternalLink, Leaf, AlertTriangle, CheckCircle2, Sparkles, Loader2 } from "lucide-react";
+// CORREÇÃO AQUI: Adicionei "Info" na lista de imports
+import { X, ExternalLink, Leaf, AlertTriangle, CheckCircle2, Sparkles, Loader2, Info } from "lucide-react";
 import { UserProfile } from "../../types";
 
-// --- COMPONENTE DE LOGO (O mesmo do App.tsx para manter consistência) ---
+// --- COMPONENTE DE LOGO ---
 const ModalStockLogo = ({ ticker, size = "lg" }: { ticker: string, size?: "sm" | "md" | "lg" }) => {
   const [errorCount, setErrorCount] = useState(0);
   
@@ -14,10 +15,9 @@ const ModalStockLogo = ({ ticker, size = "lg" }: { ticker: string, size?: "sm" |
   const sizeClasses = {
     sm: "w-8 h-8 text-[10px]",
     md: "w-10 h-10 text-xs",
-    lg: "w-16 h-16 text-xl" // Maior para o cabeçalho do modal
+    lg: "w-16 h-16 text-xl"
   };
 
-  // Se falhar, mostra Avatar com Iniciais (Fim do Planeta Feio!)
   if (errorCount >= sources.length) {
     return (
       <div className={`${sizeClasses[size]} rounded-2xl bg-gray-100 text-gray-500 font-bold flex items-center justify-center border border-gray-200 select-none shadow-inner`}>
@@ -46,12 +46,10 @@ interface StockModalProps {
 }
 
 const StockModal: React.FC<StockModalProps> = ({ stock, user, coherenceScore, onClose }) => {
-  // Estado para IA
   const [aiSummary, setAiSummary] = useState<string | null>(null);
   const [isLoadingAi, setIsLoadingAi] = useState(false);
   const [aiError, setAiError] = useState(false);
 
-  // Determina cor do Score Livo
   let scoreColor = "bg-gray-100 text-gray-800";
   let scoreIcon = <CheckCircle2 size={20} />;
   let scoreText = "Análise neutra.";
@@ -61,7 +59,7 @@ const StockModal: React.FC<StockModalProps> = ({ stock, user, coherenceScore, on
     scoreText = `Excelente alinhamento ESG (Nota Livo: ${coherenceScore}).`;
   } else if (coherenceScore >= 50) {
     scoreColor = "bg-yellow-50 text-yellow-700 border-yellow-100";
-    scoreIcon = <Info size={20} />; // Trocado AlertTriangle por Info pois é "Atenção"
+    scoreIcon = <Info size={20} />; 
     scoreText = `Alinhamento ESG mediano (Nota Livo: ${coherenceScore}).`;
   } else {
     scoreColor = "bg-red-50 text-red-700 border-red-100";
@@ -69,7 +67,6 @@ const StockModal: React.FC<StockModalProps> = ({ stock, user, coherenceScore, on
     scoreText = `Baixo alinhamento ESG (Nota Livo: ${coherenceScore}).`;
   }
 
-  // Função para chamar a IA
   const handleGenerateSummary = async () => {
     setIsLoadingAi(true);
     setAiError(false);
@@ -98,13 +95,11 @@ const StockModal: React.FC<StockModalProps> = ({ stock, user, coherenceScore, on
         {/* Header */}
         <div className="p-6 border-b border-gray-100 flex justify-between items-start bg-gray-50/50">
           <div className="flex items-center gap-4">
-            {/* LOGO CORRIGIDO (Usa o componente customizado) */}
             <ModalStockLogo ticker={stock.ticker} size="lg" />
             
             <div>
               <h2 className="text-2xl font-bold text-gray-900 leading-tight">{stock.ticker}</h2>
               <p className="text-sm text-gray-500 font-medium">{stock.name}</p>
-              {/* Badges no Header */}
               <div className="flex flex-wrap gap-1 mt-1.5">
                 {stock.sector && (
                    <span className="text-[10px] bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full font-medium uppercase tracking-wide">
@@ -124,10 +119,10 @@ const StockModal: React.FC<StockModalProps> = ({ stock, user, coherenceScore, on
           </button>
         </div>
 
-        {/* Scrollable Content */}
+        {/* Conteúdo */}
         <div className="p-6 overflow-y-auto space-y-6">
 
-          {/* SCORE CARD */}
+          {/* Score Card */}
           <div className={`p-4 rounded-2xl border ${scoreColor} flex gap-3`}>
             <div className="mt-0.5 shrink-0">{scoreIcon}</div>
             <div>
@@ -138,7 +133,7 @@ const StockModal: React.FC<StockModalProps> = ({ stock, user, coherenceScore, on
             </div>
           </div>
 
-          {/* SEÇÃO IA: LIVO INTELLIGENCE */}
+          {/* Seção IA */}
           <div className="space-y-3">
              <div className="flex items-center justify-between">
                 <h3 className="font-bold text-gray-900 flex items-center gap-2">
@@ -182,7 +177,7 @@ const StockModal: React.FC<StockModalProps> = ({ stock, user, coherenceScore, on
 
           <hr className="border-gray-100" />
 
-          {/* ÍNDICES E SELOS */}
+          {/* Selos */}
           <div>
             <h4 className="text-sm font-bold text-gray-900 mb-3 flex items-center gap-2">
               <Leaf size={16} className="text-emerald-600"/> Índices e Selos B3
@@ -211,7 +206,7 @@ const StockModal: React.FC<StockModalProps> = ({ stock, user, coherenceScore, on
             )}
           </div>
 
-          {/* INDICADORES FINANCEIROS */}
+          {/* Indicadores */}
           <div>
              <h4 className="text-sm font-bold text-gray-900 mb-3">Indicadores de Mercado</h4>
              <div className="grid grid-cols-2 gap-3">
