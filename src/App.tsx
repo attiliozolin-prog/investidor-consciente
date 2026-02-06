@@ -50,7 +50,7 @@ export default function App() {
   // Modais de Ação
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [transactionModalType, setTransactionModalType] = useState<"BUY" | "SELL">("BUY");
-  const [selectedStockTicker, setSelectedStockTicker] = useState<string | null>(null);
+ const [selectedStock, setSelectedStock] = useState<any | null>(null);
   const [isCustomStrategyOpen, setIsCustomStrategyOpen] = useState(false);
 
   // Busca de Mercado (Aba Explorar)
