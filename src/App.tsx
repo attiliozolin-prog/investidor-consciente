@@ -22,17 +22,19 @@ import { Transaction, Holding, UserProfile } from "./types";
 import { STOCKS_DB } from "./data/stocks";
 import { MarketService, EsgScoreData } from "./services/market";
 
-// COMPONENTE DE LOGO INTELIGENTE (NOVO)
-// Tenta carregar de várias fontes. Se falhar, cria um avatar com iniciais.
-const StockLogo = ({ ticker, name, size = "md" }: { ticker: string, name: string, size?: "sm" | "md" | "lg" }) => {
+// COMPONENTE DE LOGO INTELIGENTE (CORRIGIDO)
+// Prioriza o logo da API, depois tenta outras fontes, e por fim usa iniciais.
+const StockLogo = ({ ticker, name, logoUrl, size = "md" }: { ticker: string, name: string, logoUrl?: string | null, size?: "sm" | "md" | "lg" }) => {
   const [errorCount, setErrorCount] = useState(0);
   
   // Fontes de Logo (Ordem de preferência)
   const sources = [
+    logoUrl, // Fonte 0: Logo oficial da API (Brapi) - Prioridade MÁXIMA
     `https://raw.githubusercontent.com/thecapybara/br-logos/main/logos/${ticker.toUpperCase()}.png`, // Fonte 1
     `https://raw.githubusercontent.com/lbcosta/b3-logos/main/png/${ticker.toUpperCase()}.png`,     // Fonte 2
-    `https://logospng.org/download/${name.split(' ')[0].toLowerCase()}/${name.split(' ')[0].toLowerCase()}-logo-icon.png` // Fonte 3 (Tentativa)
-  ];
+    // Fonte 3 (Tentativa baseada no nome - pode falhar se o nome for o ticker)
+    `https://logospng.org/download/${name.split(' ')[0].toLowerCase()}/${name.split(' ')[0].toLowerCase()}-logo-icon.png` 
+  ].filter(Boolean) as string[]; // Remove urls nulas/undefined
 
   const sizeClasses = {
     sm: "w-8 h-8 text-[10px]",
@@ -40,10 +42,11 @@ const StockLogo = ({ ticker, name, size = "md" }: { ticker: string, name: string
     lg: "w-14 h-14 text-sm"
   };
 
-  if (errorCount >= sources.length) {
+  // Se todas as fontes falharem ou não houver fontes válidas
+  if (errorCount >= sources.length || sources.length === 0) {
     // Fallback Final: Avatar com Iniciais
     return (
-      <div className={`${sizeClasses[size]} rounded-lg bg-gray-100 text-gray-500 font-bold flex items-center justify-center border border-gray-200`}>
+      <div className={`${sizeClasses[size]} rounded-lg bg-gray-100 text-gray-500 font-bold flex items-center justify-center border border-gray-200 select-none`}>
         {ticker.substring(0, 2)}
       </div>
     );
@@ -299,9 +302,9 @@ export default function App() {
                    className="bg-white p-4 rounded-2xl border border-gray-100 flex justify-between items-center cursor-pointer hover:border-emerald-200 hover:shadow-md transition-all"
                  >
                     <div className="flex items-center gap-3 w-full">
-                        {/* NOVO COMPONENTE DE LOGO */}
+                        {/* NOVO COMPONENTE DE LOGO COM URL DA API */}
                         <div className="shrink-0">
-                           <StockLogo ticker={stock.ticker} name={stock.name} />
+                           <StockLogo ticker={stock.ticker} name={stock.name} logoUrl={stock.logo} />
                         </div>
                         
                         <div className="flex-1 min-w-0">
@@ -309,7 +312,7 @@ export default function App() {
                              <h4 className="font-bold text-gray-900">{stock.ticker}</h4>
                              {stock.badges && stock.badges.length > 0 && <Leaf size={12} className="text-emerald-500" fill="currentColor"/>}
                           </div>
-                          {/* NOME DA EMPRESA (MAIOR E VISÍVEL) */}
+                          {/* NOME DA EMPRESA (Vem da API) */}
                           <p className="text-xs text-gray-500 truncate">{stock.name}</p>
                         </div>
 
