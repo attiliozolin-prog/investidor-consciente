@@ -22,10 +22,8 @@ import { Transaction, Holding, UserProfile } from "./types";
 import { STOCKS_DB } from "./data/stocks";
 import { MarketService, EsgScoreData } from "./services/market";
 
-// --- DICIONÁRIO MESTRE DE NOMES B3 (Premium) ---
-// Garante nomes bonitos e oficiais para a grande maioria das ações.
+// --- DICIONÁRIO MESTRE DE NOMES B3 ---
 const STOCK_NAMES_FIX: Record<string, string> = {
-  // --- GIGANTES & BLUE CHIPS ---
   "VALE3": "Vale S.A.", "PETR4": "Petrobras PN", "PETR3": "Petrobras ON",
   "ITUB4": "Itaú Unibanco", "BBDC4": "Bradesco PN", "BBDC3": "Bradesco ON",
   "BBAS3": "Banco do Brasil", "WEGE3": "WEG S.A.", "ABEV3": "Ambev",
@@ -39,8 +37,6 @@ const STOCK_NAMES_FIX: Record<string, string> = {
   "CMIG4": "Cemig PN", "CPLE6": "Copel PNB", "SBSP3": "Sabesp",
   "ITSA4": "Itaúsa", "BRFS3": "BRF S.A.", "CSNA3": "CSN Siderúrgica",
   "EMBR3": "Embraer", "VBBR3": "Vibra Energia", "RRRP3": "Brava Energia",
-  
-  // --- VAREJO & CONSUMO ---
   "AMER3": "Americanas", "VIIA3": "Grupo Casas Bahia", "BHIA3": "Grupo Casas Bahia",
   "ARZZ3": "Arezzo", "SOMA3": "Grupo Soma", "ALOS3": "Allos (Shoppings)",
   "IGTI11": "Iguatemi", "MULT3": "Multiplan", "PETZ3": "Petz",
@@ -48,21 +44,15 @@ const STOCK_NAMES_FIX: Record<string, string> = {
   "ASAI3": "Assaí Atacadista", "PCAR3": "Pão de Açúcar", "NTCO3": "Natura &Co",
   "CVCB3": "CVC Viagens", "EZTC3": "EZTEC", "CYRE3": "Cyrela",
   "MRVE3": "MRV Engenharia", "JHSF3": "JHSF", "TEND3": "Tenda",
-
-  // --- SAÚDE & SEGUROS ---
   "FLRY3": "Fleury", "ODPV3": "Odontoprev", "QUAL3": "Qualicorp",
   "BBSE3": "BB Seguridade", "CXSE3": "Caixa Seguridade", "PSSA3": "Porto Seguro",
   "IRBR3": "IRB Brasil", "SULA11": "SulAmérica",
-
-  // --- UTILIDADES & INDÚSTRIA ---
   "TAEE11": "Taesa Unit", "ALUP11": "Alupar", "TRPL4": "ISA CTEEP",
   "ENGI11": "Energisa", "NEOE3": "Neoenergia", "CPFE3": "CPFL Energia",
   "EGIE3": "Engie Brasil", "AURE3": "Auren Energia", "CSMG3": "Copasa",
   "SAPR11": "Sanepar", "KLBN11": "Klabin Unit", "DXCO3": "Dexco (Duratex)",
   "USIM5": "Usiminas PNA", "GOAU4": "Metalúrgica Gerdau", "FESA4": "Ferbasa",
   "UNIP6": "Unipar PNB", "BRKM5": "Braskem PNA",
-  
-  // --- TECNOLOGIA & DIVERSOS ---
   "TOTS3": "Totvs", "LWSA3": "Locaweb", "CASH3": "Méliuz",
   "INTB3": "Intelbras", "POSI3": "Positivo", "MLAS3": "Multilaser",
   "OIBR3": "Oi S.A.", "CIEL3": "Cielo", "STBP3": "Santos Brasil",
@@ -180,13 +170,9 @@ export default function App() {
 
   const displayedStocks = useMemo(() => {
     const enriched = marketStocks.map(stock => {
-      // 1. DADOS ESG
       const b3Data = esgMap[stock.ticker] || { score: 10, badges: [] };
-      
-      // 2. DETETIVE DE NOMES (Use o Dicionário Mestre ou a API)
       let displayName = STOCK_NAMES_FIX[stock.ticker] || stock.name;
       if (displayName.endsWith('.SA')) displayName = displayName.replace('.SA', '');
-
       return { ...stock, ...b3Data, name: displayName };
     });
 
@@ -218,16 +204,27 @@ export default function App() {
   return (
     <div className="max-w-5xl mx-auto bg-[#F9FAFB] min-h-screen relative shadow-2xl border-x border-gray-200">
       
-      {/* HEADER */}
+      {/* HEADER LIVO (ATUALIZADO COM LOGO PROVISÓRIO) */}
       <header className="px-6 pt-12 pb-4 flex justify-between items-center bg-white sticky top-0 z-20 border-b border-gray-100">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-emerald-100 rounded-full flex items-center justify-center text-emerald-600 shadow-sm">
-            <Leaf size={24} fill="currentColor" className="opacity-20" />
-            <Leaf size={20} className="absolute" />
+          
+          {/* LOGO DA EMPRESA: Carrega do arquivo /public/logo.png */}
+          <div className="h-10 w-auto max-w-[120px] flex items-center justify-start overflow-hidden">
+             <img 
+               src="/logo.png" 
+               alt="Livo Logo" 
+               className="h-full w-auto object-contain"
+               onError={(e) => {
+                 // Fallback se a imagem não carregar: volta para a folha antiga
+                 e.currentTarget.style.display = 'none';
+                 e.currentTarget.parentElement!.innerHTML = `<div class="w-10 h-10 bg-emerald-100 rounded-full flex items-center justify-center text-emerald-600"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z"/><path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12"/></svg></div>`;
+               }}
+             />
           </div>
+
           <div>
-            <h1 className="text-xl font-bold text-gray-900 tracking-tight leading-none">Livo</h1>
-            <p className="text-[10px] text-gray-500 font-medium uppercase tracking-wider">
+            <h1 className="text-xl font-bold text-gray-900 tracking-tight leading-none hidden">Livo</h1>
+            <p className="text-[10px] text-gray-500 font-medium uppercase tracking-wider pl-1">
               {userProfile.riskProfile === "Personalizado" ? "Estratégia Própria" : userProfile.goal || "Investidor Consciente"}
             </p>
           </div>
