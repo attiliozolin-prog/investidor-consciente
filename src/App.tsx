@@ -19,7 +19,7 @@ import MethodologyModal from "./components/modals/MethodologyModal";
 import HomeTab from "./components/layout/tabs/HomeTab";
 import PortfolioDashboard from "./components/layout/tabs/PortfolioDashboard";
 import { Transaction, Holding, UserProfile } from "./types";
-import { STOCKS_DB } from "./data/stocks";
+import { STOCKS_DB } from "./data/stocks"; // Essa lista inicial ainda existe, mas vamos expandi-la
 import { MarketService, EsgScoreData } from "./services/market";
 
 // --- DICIONÁRIO MESTRE DE NOMES B3 ---
@@ -33,47 +33,18 @@ const STOCK_NAMES_FIX: Record<string, string> = {
   "RAIL3": "Rumo Logística", "ELET3": "Eletrobras ON", "ELET6": "Eletrobras PNB",
   "B3SA3": "B3 S.A.", "BPAC11": "BTG Pactual", "SANB11": "Santander Brasil",
   "VIVT3": "Vivo Telefônica", "TIMS3": "TIM Brasil", "CSAN3": "Cosan",
-  "EQTL3": "Equatorial", "RADL3": "Raia Drogasil", "UGPA3": "Ultrapar",
-  "CMIG4": "Cemig PN", "CPLE6": "Copel PNB", "SBSP3": "Sabesp",
-  "ITSA4": "Itaúsa", "BRFS3": "BRF S.A.", "CSNA3": "CSN Siderúrgica",
-  "EMBR3": "Embraer", "VBBR3": "Vibra Energia", "RRRP3": "Brava Energia",
-  "AMER3": "Americanas", "VIIA3": "Grupo Casas Bahia", "BHIA3": "Grupo Casas Bahia",
-  "ARZZ3": "Arezzo", "SOMA3": "Grupo Soma", "ALOS3": "Allos (Shoppings)",
-  "IGTI11": "Iguatemi", "MULT3": "Multiplan", "PETZ3": "Petz",
-  "SMTO3": "São Martinho", "MDIA3": "M. Dias Branco", "CRFB3": "Carrefour Brasil",
-  "ASAI3": "Assaí Atacadista", "PCAR3": "Pão de Açúcar", "NTCO3": "Natura &Co",
-  "CVCB3": "CVC Viagens", "EZTC3": "EZTEC", "CYRE3": "Cyrela",
-  "MRVE3": "MRV Engenharia", "JHSF3": "JHSF", "TEND3": "Tenda",
-  "FLRY3": "Fleury", "ODPV3": "Odontoprev", "QUAL3": "Qualicorp",
-  "BBSE3": "BB Seguridade", "CXSE3": "Caixa Seguridade", "PSSA3": "Porto Seguro",
-  "IRBR3": "IRB Brasil", "SULA11": "SulAmérica",
-  "TAEE11": "Taesa Unit", "ALUP11": "Alupar", "TRPL4": "ISA CTEEP",
-  "ENGI11": "Energisa", "NEOE3": "Neoenergia", "CPFE3": "CPFL Energia",
-  "EGIE3": "Engie Brasil", "AURE3": "Auren Energia", "CSMG3": "Copasa",
-  "SAPR11": "Sanepar", "KLBN11": "Klabin Unit", "DXCO3": "Dexco (Duratex)",
-  "USIM5": "Usiminas PNA", "GOAU4": "Metalúrgica Gerdau", "FESA4": "Ferbasa",
-  "UNIP6": "Unipar PNB", "BRKM5": "Braskem PNA",
-  "TOTS3": "Totvs", "LWSA3": "Locaweb", "CASH3": "Méliuz",
-  "INTB3": "Intelbras", "POSI3": "Positivo", "MLAS3": "Multilaser",
-  "OIBR3": "Oi S.A.", "CIEL3": "Cielo", "STBP3": "Santos Brasil",
-  "AZUL4": "Azul Linhas Aéreas", "GOLL4": "Gol Linhas Aéreas", "CIGN3": "Cigna",
-  "COGN3": "Cogna Educação", "YDUQS3": "Yduqs (Estácio)", "SEER3": "Ser Educacional"
+  "AMER3": "Americanas", "VIIA3": "Grupo Casas Bahia", "AZUL4": "Azul Linhas Aéreas",
+  "GOLL4": "Gol Linhas Aéreas", "OIBR3": "Oi S.A.", "CASH3": "Méliuz"
 };
 
 // --- COMPONENTE DE LOGO ---
 const StockLogo = ({ ticker, size = "md" }: { ticker: string, size?: "sm" | "md" | "lg" }) => {
   const [errorCount, setErrorCount] = useState(0);
-  
   const sources = [
     `https://raw.githubusercontent.com/thecapybara/br-logos/main/logos/${ticker.toUpperCase()}.png`,
     `https://raw.githubusercontent.com/lbcosta/b3-logos/main/png/${ticker.toUpperCase()}.png`
   ];
-
-  const sizeClasses = {
-    sm: "w-8 h-8 text-[10px]",
-    md: "w-10 h-10 text-xs",
-    lg: "w-14 h-14 text-sm"
-  };
+  const sizeClasses = { sm: "w-8 h-8 text-[10px]", md: "w-10 h-10 text-xs", lg: "w-14 h-14 text-sm" };
 
   if (errorCount >= sources.length) {
     return (
@@ -82,15 +53,9 @@ const StockLogo = ({ ticker, size = "md" }: { ticker: string, size?: "sm" | "md"
       </div>
     );
   }
-
   return (
     <div className={`${sizeClasses[size]} rounded-lg bg-white flex items-center justify-center overflow-hidden border border-gray-100 shadow-sm p-0.5`}>
-      <img
-        src={sources[errorCount]}
-        alt={ticker}
-        className="w-full h-full object-contain"
-        onError={() => setErrorCount(prev => prev + 1)}
-      />
+      <img src={sources[errorCount]} alt={ticker} className="w-full h-full object-contain" onError={() => setErrorCount(prev => prev + 1)} />
     </div>
   );
 };
@@ -107,6 +72,10 @@ export default function App() {
     try { return JSON.parse(localStorage.getItem("transactions") || "[]"); } catch { return []; }
   });
 
+  // ESTADO CRÍTICO: Dynamic Stocks (Ações que o usuário adicionou e a gente precisa rastrear o preço)
+  // Inicializa com o STOCKS_DB (fixo), mas permite adicionar novos.
+  const [knownStocks, setKnownStocks] = useState<any[]>(STOCKS_DB);
+
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [transactionModalType, setTransactionModalType] = useState<"BUY" | "SELL">("BUY");
   const [selectedStock, setSelectedStock] = useState<any | null>(null);
@@ -122,12 +91,10 @@ export default function App() {
   const [isEsgMapLoaded, setIsEsgMapLoaded] = useState(false);
 
   useEffect(() => {
-    MarketService.getEsgScores().then(map => {
-      setEsgMap(map);
-      setIsEsgMapLoaded(true);
-    });
+    MarketService.getEsgScores().then(map => { setEsgMap(map); setIsEsgMapLoaded(true); });
   }, []);
 
+  // Busca do Mercado (Aba Explorar)
   useEffect(() => {
     if (activeTab === "market") {
       const delayDebounceFn = setTimeout(() => {
@@ -140,34 +107,66 @@ export default function App() {
     }
   }, [activeTab, searchTerm]);
 
+  // CÁLCULO DE HOLDINGS (Corrigido para usar knownStocks)
   const holdings = useMemo(() => {
     const map = new Map<string, { qty: number; totalCost: number }>();
+    
     transactions.forEach((t) => {
       const current = map.get(t.ticker) || { qty: 0, totalCost: 0 };
-      if (t.type === "BUY") { map.set(t.ticker, { qty: current.qty + t.quantity, totalCost: current.totalCost + t.quantity * t.price }); } 
-      else { const avg = current.qty > 0 ? current.totalCost / current.qty : 0; map.set(t.ticker, { qty: current.qty - t.quantity, totalCost: current.totalCost - t.quantity * avg }); }
+      if (t.type === "BUY") { 
+        map.set(t.ticker, { qty: current.qty + t.quantity, totalCost: current.totalCost + (t.quantity * t.price) }); 
+      } else { 
+        // Lógica de Venda (Preço Médio)
+        const avgPrice = current.qty > 0 ? current.totalCost / current.qty : 0;
+        map.set(t.ticker, { qty: current.qty - t.quantity, totalCost: current.totalCost - (t.quantity * avgPrice) }); 
+      }
     });
+
     const result: Holding[] = [];
+    
     map.forEach((value, ticker) => {
-      if (value.qty > 0 || (value.qty === 0 && value.totalCost > 0)) {
-        if (value.qty <= 0 && value.totalCost <= 0) return;
-        const stock = STOCKS_DB.find((s) => s.ticker === ticker);
-        const curr = stock ? stock.price : (value.totalCost / (value.qty || 1));
-        const total = stock?.assetType === "fixed_income" ? value.totalCost : value.qty * curr;
-        result.push({ ticker, assetType: stock?.assetType || "stock", quantity: value.qty, averagePrice: value.qty > 0 ? value.totalCost / value.qty : 0, currentPrice: curr, totalValue: total, profit: total - value.totalCost, profitPercent: 0, allocationPercent: 0 });
+      // Filtra ativos zerados (vendeu tudo)
+      if (value.qty > 0.00001 || (value.totalCost > 0 && ticker === "FIXED")) { // Ajuste para float precision
+        
+        // 1. Tenta achar na lista dinâmica (que inclui os novos adicionados)
+        let stock = knownStocks.find((s) => s.ticker === ticker);
+        
+        // 2. Fallback para Renda Fixa ou Ativos Desconhecidos
+        const isFixedIncome = stock?.assetType === 'fixed_income' || ticker.includes("CDB") || ticker.includes("TESOURO");
+        
+        // CORREÇÃO DO ZERO REAIS:
+        // Se achou a stock, usa o preço dela. Se não achou, usa o Preço Médio (Cost) como fallback temporário.
+        const currentPrice = stock ? stock.price : (value.totalCost / (value.qty || 1));
+        
+        // Cálculo do Total
+        const totalValue = isFixedIncome ? value.totalCost : (value.qty * currentPrice);
+
+        result.push({
+          ticker,
+          assetType: isFixedIncome ? "fixed_income" : (stock?.assetType || "stock"),
+          quantity: value.qty,
+          averagePrice: value.qty > 0 ? value.totalCost / value.qty : 0,
+          currentPrice: currentPrice,
+          totalValue: totalValue,
+          profit: totalValue - value.totalCost,
+          profitPercent: value.totalCost > 0 ? ((totalValue - value.totalCost) / value.totalCost) * 100 : 0,
+          allocationPercent: 0 // Será calculado depois
+        });
       }
     });
     return result;
-  }, [transactions]);
+  }, [transactions, knownStocks]); // Recalcula se transactions OU knownStocks mudar
 
+  // Ranking ESG
   const rankedStocks = useMemo(() => {
-    return STOCKS_DB.map((stock) => {
+    return knownStocks.map((stock) => {
       const esgWeight = userProfile.esgImportance;
-      const score = stock.esgScore * esgWeight + stock.financialScore * (1 - esgWeight);
+      const score = (stock.esgScore || 50) * esgWeight + (stock.financialScore || 50) * (1 - esgWeight);
       return { ...stock, coherenceScore: Math.round(score) };
     }).sort((a, b) => b.coherenceScore - a.coherenceScore);
-  }, [userProfile]);
+  }, [userProfile, knownStocks]);
 
+  // Lista da Aba Mercado
   const displayedStocks = useMemo(() => {
     const enriched = marketStocks.map(stock => {
       const b3Data = esgMap[stock.ticker] || { score: 10, badges: [] };
@@ -175,27 +174,47 @@ export default function App() {
       if (displayName.endsWith('.SA')) displayName = displayName.replace('.SA', '');
       return { ...stock, ...b3Data, name: displayName };
     });
-
-    return enriched.filter(stock => {
-       if (!filterEsgOnly) return true;
-       return stock.score >= 50;
-    });
+    return enriched.filter(stock => !filterEsgOnly || stock.score >= 50);
   }, [marketStocks, filterEsgOnly, esgMap]);
 
-  const handleAddTransaction = (t: Omit<Transaction, "id">) => {
+  // --- FUNÇÃO CRÍTICA: ADICIONAR TRANSAÇÃO ---
+  const handleAddTransaction = (t: Omit<Transaction, "id">, extraStockData?: any) => {
+    // 1. Salva a transação
     const updated = [...transactions, { ...t, id: Math.random().toString(36).substr(2, 9) }];
     setTransactions(updated);
     localStorage.setItem("transactions", JSON.stringify(updated));
+
+    // 2. CORREÇÃO "ZERO REAIS": 
+    // Se recebemos dados extras da stock (do modal), atualizamos a lista `knownStocks`
+    if (extraStockData) {
+      setKnownStocks(prev => {
+        // Verifica se já conhecemos essa stock
+        const exists = prev.find(s => s.ticker === extraStockData.ticker);
+        if (exists) {
+            // Atualiza preço se já existe
+            return prev.map(s => s.ticker === extraStockData.ticker ? { ...s, price: extraStockData.price } : s);
+        }
+        // Adiciona nova stock à lista de rastreio
+        return [...prev, {
+            ...extraStockData,
+            esgScore: extraStockData.esgScore || 50, // Default ESG
+            financialScore: 60,
+            assetType: extraStockData.stock?.endsWith('11') ? 'fii' : 'stock'
+        }];
+      });
+    }
   };
+
   const handleDeleteAsset = (ticker: string) => {
-    if (confirm(`Remover ${ticker}?`)) {
+    if (confirm(`Remover ${ticker} do histórico?`)) {
       const updated = transactions.filter((t) => t.ticker !== ticker);
       setTransactions(updated);
       localStorage.setItem("transactions", JSON.stringify(updated));
     }
   };
-  const openBuyModal = () => setIsAddModalOpen(true);
-  const openSellModal = () => setIsAddModalOpen(true);
+
+  const openBuyModal = () => { setTransactionModalType("BUY"); setIsAddModalOpen(true); };
+  const openSellModal = () => { setTransactionModalType("SELL"); setIsAddModalOpen(true); };
   const handleRetakeOnboarding = () => { if(window.confirm("Refazer perfil?")) setUserProfile(prev => ({ ...prev, isOnboardingComplete: false })); };
   const handleSaveCustomStrategy = (targets: any) => { setUserProfile((prev) => ({ ...prev, riskProfile: "Personalizado", customTargets: targets })); setIsCustomStrategyOpen(false); };
 
@@ -204,24 +223,20 @@ export default function App() {
   return (
     <div className="max-w-5xl mx-auto bg-[#F9FAFB] min-h-screen relative shadow-2xl border-x border-gray-200">
       
-      {/* HEADER LIVO (ATUALIZADO COM LOGO PROVISÓRIO) */}
+      {/* HEADER */}
       <header className="px-6 pt-12 pb-4 flex justify-between items-center bg-white sticky top-0 z-20 border-b border-gray-100">
         <div className="flex items-center gap-3">
-          
-          {/* LOGO DA EMPRESA: Carrega do arquivo /public/logo.png */}
           <div className="h-10 w-auto max-w-[120px] flex items-center justify-start overflow-hidden">
              <img 
                src="/logo.png" 
                alt="Livo Logo" 
                className="h-full w-auto object-contain"
                onError={(e) => {
-                 // Fallback se a imagem não carregar: volta para a folha antiga
                  e.currentTarget.style.display = 'none';
                  e.currentTarget.parentElement!.innerHTML = `<div class="w-10 h-10 bg-emerald-100 rounded-full flex items-center justify-center text-emerald-600"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z"/><path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12"/></svg></div>`;
                }}
              />
           </div>
-
           <div>
             <h1 className="text-xl font-bold text-gray-900 tracking-tight leading-none hidden">Livo</h1>
             <p className="text-[10px] text-gray-500 font-medium uppercase tracking-wider pl-1">
@@ -268,32 +283,21 @@ export default function App() {
               {displayedStocks.length === 0 && !isLoadingMarket && (
                 <div className="text-center py-10">
                    <p className="text-gray-400 mb-2">Nenhum ativo encontrado.</p>
-                   {filterEsgOnly && <p className="text-xs text-orange-400">Tente desativar o filtro ESG.</p>}
                 </div>
               )}
-              
-              {displayedStocks.map((stock) => {
-                return (
-                 <div
-                   key={stock.ticker}
-                   onClick={() => {
-                      const fullStockData = {
-                         ...stock,
-                         description: stock.description || `Ações da ${stock.name}`,
-                         esgScore: stock.score, 
-                         tags: stock.badges, 
-                         coherenceScore: stock.score,
-                         volatility: "Média", dividendYield: stock.dividendYield || 0, peRatio: stock.peRatio || 0, roe: stock.roe || 0
-                      };
-                      STOCKS_DB.push(fullStockData);
+              {displayedStocks.map((stock) => (
+                 <div key={stock.ticker} onClick={() => {
+                      const fullStockData = { ...stock, coherenceScore: stock.score, tags: stock.badges };
+                      // Adiciona ao knownStocks ao clicar, para garantir
+                      if (!knownStocks.find(s => s.ticker === stock.ticker)) {
+                          setKnownStocks(prev => [...prev, fullStockData]);
+                      }
                       setSelectedStock(fullStockData);
                    }}
                    className="bg-white p-4 rounded-2xl border border-gray-100 flex justify-between items-center cursor-pointer hover:border-emerald-200 hover:shadow-md transition-all"
                  >
                     <div className="flex items-center gap-3 w-full">
-                        <div className="shrink-0">
-                           <StockLogo ticker={stock.ticker} size="md" />
-                        </div>
+                        <div className="shrink-0"><StockLogo ticker={stock.ticker} size="md" /></div>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-1">
                              <h4 className="font-bold text-gray-900">{stock.ticker}</h4>
@@ -303,13 +307,11 @@ export default function App() {
                         </div>
                         <div className="text-right shrink-0">
                             <div className="font-bold text-gray-900">R$ {stock.price?.toFixed(2)}</div>
-                            <div className="text-xs font-bold text-emerald-600">
-                                {stock.score} pts
-                            </div>
+                            <div className="text-xs font-bold text-emerald-600">{stock.score} pts</div>
                         </div>
                     </div>
                  </div>
-              )})}
+              ))}
             </div>
             <div className="text-center text-[10px] text-gray-400 mt-4">Dados: Brapi. | Scores: B3.</div>
           </div>
@@ -322,7 +324,7 @@ export default function App() {
         <button onClick={() => setActiveTab("market")} className={`flex flex-col items-center gap-1 transition-all ${activeTab === "market" ? "text-emerald-400 scale-110" : "text-gray-400 hover:text-white"}`}><Compass size={22} /><span className="text-[10px] font-medium">Explorar</span></button>
       </nav>
 
-      {isAddModalOpen && <AddTransactionModal stocks={STOCKS_DB} onClose={() => setIsAddModalOpen(false)} onSave={handleAddTransaction} initialType={transactionModalType} />}
+      {isAddModalOpen && <AddTransactionModal stocks={knownStocks} onClose={() => setIsAddModalOpen(false)} onSave={handleAddTransaction} initialType={transactionModalType} />}
       {selectedStock && <StockModal stock={selectedStock} user={userProfile} coherenceScore={selectedStock.coherenceScore || 0} onClose={() => setSelectedStock(null)} />}
       {isCustomStrategyOpen && <CustomStrategyModal currentTargets={userProfile.customTargets || { fixed_income: 40, fii: 30, stock: 30 }} onClose={() => setIsCustomStrategyOpen(false)} onSave={handleSaveCustomStrategy} />}
       {isMethodologyOpen && <MethodologyModal onClose={() => setIsMethodologyOpen(false)} />}
