@@ -5,8 +5,8 @@ import {
   Briefcase,
   Compass,
   Home,
-  Leaf,     // Necessário para o ícone de ESG
-  Loader2   // Necessário para o loading da busca
+  Leaf,
+  Loader2
 } from "lucide-react";
 
 import Onboarding from "./components/onboarding";
@@ -17,7 +17,7 @@ import HomeTab from "./components/layout/tabs/HomeTab";
 import PortfolioDashboard from "./components/layout/tabs/PortfolioDashboard";
 import { Transaction, Holding, UserProfile } from "./types";
 import { STOCKS_DB } from "./data/stocks";
-import { MarketService } from "./services/market";
+import { MarketService, EsgScoreData } from "./services/market";
 
 export default function App() {
   // ==========================================
@@ -28,7 +28,7 @@ export default function App() {
   const [activeTab, setActiveTab] = useState("home");
   const [showValues, setShowValues] = useState(true);
 
-  // Dados do Usuário e Transações
+  // Dados do Usuário
   const [userProfile, setUserProfile] = useState<UserProfile>({
     name: "",
     goal: null,
@@ -37,9 +37,14 @@ export default function App() {
     isOnboardingComplete: false,
   });
 
+  // Transações (Persistência Local)
   const [transactions, setTransactions] = useState<Transaction[]>(() => {
-    const saved = localStorage.getItem("transactions");
-    return saved ? JSON.parse(saved) : [];
+    try {
+      const saved = localStorage.getItem("transactions");
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
   });
 
   // Modais de Ação
@@ -52,13 +57,25 @@ export default function App() {
   const [marketStocks, setMarketStocks] = useState<any[]>([]);
   const [isLoadingMarket, setIsLoadingMarket] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
-  const [filterEsgOnly, setFilterEsgOnly] = useState(false); // Filtro ESG
+  const [filterEsgOnly, setFilterEsgOnly] = useState(false);
+
+  // DADOS ESG GLOBAIS (B3)
+  const [esgMap, setEsgMap] = useState<Record<string, EsgScoreData>>({});
+  const [isEsgMapLoaded, setIsEsgMapLoaded] = useState(false);
 
   // ==========================================
   // 2. EFEITOS (USE EFFECT)
   // ==========================================
 
-  // Efeito de Busca (Debounce para não sobrecarregar a API)
+  // A. Carrega o Mapa de Scores ESG da B3 (Ao iniciar o App)
+  useEffect(() => {
+    MarketService.getEsgScores().then(map => {
+      setEsgMap(map);
+      setIsEsgMapLoaded(true);
+    });
+  }, []);
+
+  // B. Efeito de Busca de Mercado (Debounce)
   useEffect(() => {
     if (activeTab === "market") {
       const delayDebounceFn = setTimeout(() => {
@@ -137,13 +154,20 @@ export default function App() {
     }).sort((a, b) => b.coherenceScore - a.coherenceScore);
   }, [userProfile]);
 
-  // Filtro de Exibição na Aba Market
+  // Lista de Exibição do Mercado (Cruza Brapi + B3 ESG)
   const displayedStocks = useMemo(() => {
-    return marketStocks.filter(stock => {
-       if (!filterEsgOnly) return true;
-       return stock.esgScore >= 80;
+    // 1. Enriquece os dados de mercado com o Score B3
+    const enriched = marketStocks.map(stock => {
+      const b3Data = esgMap[stock.ticker] || { score: 5, badges: [] }; // Fallback nota 5
+      return { ...stock, ...b3Data }; // Combina Preço (Brapi) + Score (B3)
     });
-  }, [marketStocks, filterEsgOnly]);
+
+    // 2. Aplica Filtros
+    return enriched.filter(stock => {
+       if (!filterEsgOnly) return true;
+       return stock.score >= 50; // Filtra quem tem pontuação ESG decente
+    });
+  }, [marketStocks, filterEsgOnly, esgMap]);
 
   // ==========================================
   // 4. HANDLERS (AÇÕES DO USUÁRIO)
@@ -198,7 +222,7 @@ export default function App() {
   return (
     <div className="max-w-5xl mx-auto bg-[#F9FAFB] min-h-screen relative shadow-2xl border-x border-gray-200">
       
-   {/* HEADER LIVO */}
+      {/* HEADER LIVO */}
       <header className="px-6 pt-12 pb-4 flex justify-between items-center bg-white sticky top-0 z-20 border-b border-gray-100">
         <div className="flex items-center gap-3">
           {/* Logo Livo (Ícone de Folha) */}
@@ -266,21 +290,27 @@ export default function App() {
         {/* ABA: EXPLORAR (MERCADO) */}
         {activeTab === "market" && (
           <div className="space-y-4 pb-32 animate-in fade-in">
-            {/* Barra de Busca + Filtro */}
             <div className="sticky top-20 z-10 space-y-2">
+               {/* Barra de Busca */}
                <div className="bg-white p-4 rounded-2xl border border-gray-100 flex gap-2 shadow-sm">
                   <Search className="text-gray-400" />
                   <input
                     type="text"
-                    placeholder="Buscar na B3 (ex: PETR4...)"
+                    placeholder="Buscar na B3 (ex: WEGE3, VALE3...)"
                     className="w-full outline-none text-sm bg-transparent"
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                   />
                   {isLoadingMarket && <Loader2 className="animate-spin text-emerald-500" size={20} />}
                </div>
-               {/* Filtro Toggle */}
-               <div className="flex justify-end">
+               
+               {/* Status e Filtro */}
+               <div className="flex justify-end items-center gap-2">
+                 {!isEsgMapLoaded && (
+                   <span className="text-[10px] text-gray-400 flex items-center gap-1">
+                     <Loader2 size={10} className="animate-spin"/> Sincronizando B3...
+                   </span>
+                 )}
                  <button 
                    onClick={() => setFilterEsgOnly(!filterEsgOnly)}
                    className={`text-xs font-bold px-3 py-1.5 rounded-full flex items-center gap-1.5 transition-all border ${
@@ -305,23 +335,30 @@ export default function App() {
                 </div>
               )}
               
-              {displayedStocks.map((stock) => (
+              {displayedStocks.map((stock) => {
+                // Cálculo de Score Personalizado
+                const userPersonalScore = Math.round(
+                   (stock.score * userProfile.esgImportance) + 
+                   (60 * (1 - userProfile.esgImportance)) // 60 é uma nota financeira base segura
+                );
+
+                return (
                  <div
                    key={stock.ticker}
                    onClick={() => {
-                      // ADAPTER: Prepara o objeto para o Modal e Salva Temporariamente
+                      // PREPARA DADOS PARA O MODAL
                       const fullStockData = {
                          ...stock,
                          description: stock.description || `Ações da ${stock.name}`,
-                         volatility: "Média",
-                         dividendYield: stock.dividendYield || 0,
-                         peRatio: stock.peRatio || 0,
-                         roe: stock.roe || 0,
-                         tags: stock.tags || [], 
-                         coherenceScore: Math.round(
-                           (stock.esgScore * userProfile.esgImportance) + 
-                           (stock.financialScore * (1 - userProfile.esgImportance))
-                         )
+                         // Injeta os dados da B3 no Modal
+                         esgScore: stock.score, 
+                         tags: stock.badges, 
+                         coherenceScore: userPersonalScore,
+                         // Fallbacks financeiros
+                         volatility: "Média", 
+                         dividendYield: stock.dividendYield || 0, 
+                         peRatio: stock.peRatio || 0, 
+                         roe: stock.roe || 0
                       };
                       // Hack seguro para garantir que o modal ache o dado
                       STOCKS_DB.push(fullStockData);
@@ -330,17 +367,23 @@ export default function App() {
                    className="bg-white p-4 rounded-2xl border border-gray-100 flex justify-between items-center cursor-pointer hover:border-emerald-200 hover:shadow-md transition-all"
                  >
                     <div className="flex items-center gap-3">
+                        {/* Logo com Fallback Triplo */}
                         <div className="w-10 h-10 rounded-lg bg-gray-50 flex items-center justify-center overflow-hidden border border-gray-100">
-                          {stock.logo ? (
-                            <img src={stock.logo} alt={stock.ticker} className="w-full h-full object-contain" />
-                          ) : (
-                            <span className="font-bold text-xs text-gray-600">{stock.ticker.substring(0, 2)}</span>
-                          )}
+                          <img 
+                             src={stock.logo || `https://raw.githubusercontent.com/thecapybara/br-logos/main/logos/${stock.ticker}.png`} 
+                             onError={(e) => { 
+                               e.currentTarget.onerror = null; 
+                               e.currentTarget.src = `https://via.placeholder.com/50/f9fafb/4b5563?text=${stock.ticker.substring(0,2)}`; 
+                             }} 
+                             alt={stock.ticker} 
+                             className="w-full h-full object-contain" 
+                          />
                         </div>
                         <div>
                           <h4 className="font-bold text-gray-900 flex items-center gap-1">
                             {stock.ticker}
-                            {stock.esgScore >= 80 && <Leaf size={12} className="text-emerald-500" fill="currentColor"/>}
+                            {/* Selo B3 Real: Só mostra folha se tiver Badge B3 */}
+                            {stock.badges && stock.badges.length > 0 && <Leaf size={12} className="text-emerald-500" fill="currentColor"/>}
                           </h4>
                           <p className="text-xs text-gray-500 max-w-[150px] truncate">{stock.name}</p>
                         </div>
@@ -348,19 +391,15 @@ export default function App() {
                     <div className="text-right">
                         <div className="font-bold text-gray-900">R$ {stock.price?.toFixed(2)}</div>
                         <div className="text-xs font-bold text-emerald-600">
-                          {Math.round(
-                             (stock.esgScore * userProfile.esgImportance) + 
-                             (stock.financialScore * (1 - userProfile.esgImportance))
-                           )} pts
+                          {userPersonalScore} pts
                         </div>
                     </div>
                  </div>
-              ))}
+              )})}
             </div>
             
             <div className="text-center text-[10px] text-gray-400 mt-4">
-              Dados de mercado fornecidos por B3/Brapi. <br/>
-              Notas ESG baseadas em índices oficiais (ISE, Novo Mercado).
+              Dados de mercado: Brapi. | Scores ESG: B3 (ISE, ICO2, IDIVERSA).
             </div>
           </div>
         )}
