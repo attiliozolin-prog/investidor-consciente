@@ -22,7 +22,7 @@ import { Transaction, Holding, UserProfile } from "./types";
 import { STOCKS_DB } from "./data/stocks";
 import { MarketService, EsgScoreData } from "./services/market";
 
-// --- DICIONÁRIO DE NOMES (RESTITUIDO) ---
+// --- DICIONÁRIO DE NOMES ---
 const STOCK_NAMES_FIX: Record<string, string> = {
   "VALE3": "Vale S.A.", "PETR4": "Petrobras PN", "PETR3": "Petrobras ON",
   "ITUB4": "Itaú Unibanco", "BBDC4": "Bradesco PN", "BBAS3": "Banco do Brasil",
@@ -137,6 +137,7 @@ export default function App() {
 
   const rankedStocks = useMemo(() => {
     return STOCKS_DB.map((stock) => {
+      // Aqui mantemos o cálculo interno de coerência apenas para ordenação, se necessário
       const esgWeight = userProfile.esgImportance;
       const score = stock.esgScore * esgWeight + stock.financialScore * (1 - esgWeight);
       return { ...stock, coherenceScore: Math.round(score) };
@@ -145,18 +146,19 @@ export default function App() {
 
   const displayedStocks = useMemo(() => {
     const enriched = marketStocks.map(stock => {
+      // 1. DADOS ESG (Novo Algoritmo Livo)
+      // score: Já vem calculado do backend (Base 10 + Índices)
       const b3Data = esgMap[stock.ticker] || { score: 10, badges: [] };
       
       let displayName = STOCK_NAMES_FIX[stock.ticker] || stock.name;
       if (displayName.endsWith('.SA')) displayName = displayName.replace('.SA', '');
 
-      // CORREÇÃO AQUI: Mudamos a ordem. Primeiro espalha stock e b3Data, 
-      // e por ÚLTIMO definimos o name. Isso satisfaz o compilador.
       return { ...stock, ...b3Data, name: displayName };
     });
 
     return enriched.filter(stock => {
        if (!filterEsgOnly) return true;
+       // Filtra usando a Nota Livo Real
        return stock.score >= 50;
     });
   }, [marketStocks, filterEsgOnly, esgMap]);
@@ -241,7 +243,10 @@ export default function App() {
               )}
               
               {displayedStocks.map((stock) => {
-                const userPersonalScore = Math.round((stock.score * userProfile.esgImportance) + (60 * (1 - userProfile.esgImportance)));
+                // CORREÇÃO CRÍTICA: Agora usamos DIRETAMENTE a stock.score (Nota Livo Real)
+                // Removemos o "Math.round(...)" que misturava com perfil financeiro.
+                // O valor exibido será exatamente o que vem do algoritmo B3.
+                
                 return (
                  <div
                    key={stock.ticker}
@@ -249,7 +254,10 @@ export default function App() {
                       const fullStockData = {
                          ...stock,
                          description: stock.description || `Ações da ${stock.name}`,
-                         esgScore: stock.score, tags: stock.badges, coherenceScore: userPersonalScore,
+                         esgScore: stock.score, 
+                         tags: stock.badges, 
+                         // Passamos a nota Livo Pura para o modal também
+                         coherenceScore: stock.score,
                          volatility: "Média", dividendYield: stock.dividendYield || 0, peRatio: stock.peRatio || 0, roe: stock.roe || 0
                       };
                       STOCKS_DB.push(fullStockData);
@@ -264,13 +272,17 @@ export default function App() {
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-1">
                              <h4 className="font-bold text-gray-900">{stock.ticker}</h4>
-                             {stock.badges && stock.badges.length > 0 && <Leaf size={12} className="text-emerald-500" fill="currentColor"/>}
+                             {/* Só mostra a folha se tiver Nota Livo Alta (ex: > 60) ou Badges */}
+                             {stock.score >= 50 && <Leaf size={12} className="text-emerald-500" fill="currentColor"/>}
                           </div>
                           <p className="text-xs text-gray-500 truncate">{stock.name}</p>
                         </div>
                         <div className="text-right shrink-0">
                             <div className="font-bold text-gray-900">R$ {stock.price?.toFixed(2)}</div>
-                            <div className="text-xs font-bold text-emerald-600">{userPersonalScore} pts</div>
+                            {/* EXIBIÇÃO DA NOTA LIVO PURA */}
+                            <div className="text-xs font-bold text-emerald-600">
+                                {stock.score} pts
+                            </div>
                         </div>
                     </div>
                  </div>
