@@ -22,17 +22,52 @@ import { Transaction, Holding, UserProfile } from "./types";
 import { STOCKS_DB } from "./data/stocks";
 import { MarketService, EsgScoreData } from "./services/market";
 
-// --- DICIONÁRIO DE NOMES ---
+// --- DICIONÁRIO MESTRE DE NOMES B3 (Premium) ---
+// Garante nomes bonitos e oficiais para a grande maioria das ações.
 const STOCK_NAMES_FIX: Record<string, string> = {
+  // --- GIGANTES & BLUE CHIPS ---
   "VALE3": "Vale S.A.", "PETR4": "Petrobras PN", "PETR3": "Petrobras ON",
-  "ITUB4": "Itaú Unibanco", "BBDC4": "Bradesco PN", "BBAS3": "Banco do Brasil",
-  "WEGE3": "WEG S.A.", "MGLU3": "Magazine Luiza", "JBSS3": "JBS",
-  "SUZB3": "Suzano", "GGBR4": "Gerdau PN", "RENT3": "Localiza",
-  "LREN3": "Lojas Renner", "PRIO3": "Prio", "HAPV3": "Hapvida",
-  "RDOR3": "Rede D'Or", "RAIL3": "Rumo S.A.", "ELET3": "Eletrobras ON",
-  "B3SA3": "B3 S.A.", "BPAC11": "BTG Pactual", "CMIG4": "Cemig PN",
-  "ITSA4": "Itaúsa", "VIVT3": "Vivo Telefônica", "TIMS3": "TIM Brasil",
-  "CSAN3": "Cosan"
+  "ITUB4": "Itaú Unibanco", "BBDC4": "Bradesco PN", "BBDC3": "Bradesco ON",
+  "BBAS3": "Banco do Brasil", "WEGE3": "WEG S.A.", "ABEV3": "Ambev",
+  "MGLU3": "Magazine Luiza", "JBSS3": "JBS", "SUZB3": "Suzano",
+  "GGBR4": "Gerdau PN", "RENT3": "Localiza", "LREN3": "Lojas Renner",
+  "PRIO3": "Prio (PetroRio)", "HAPV3": "Hapvida", "RDOR3": "Rede D'Or",
+  "RAIL3": "Rumo Logística", "ELET3": "Eletrobras ON", "ELET6": "Eletrobras PNB",
+  "B3SA3": "B3 S.A.", "BPAC11": "BTG Pactual", "SANB11": "Santander Brasil",
+  "VIVT3": "Vivo Telefônica", "TIMS3": "TIM Brasil", "CSAN3": "Cosan",
+  "EQTL3": "Equatorial", "RADL3": "Raia Drogasil", "UGPA3": "Ultrapar",
+  "CMIG4": "Cemig PN", "CPLE6": "Copel PNB", "SBSP3": "Sabesp",
+  "ITSA4": "Itaúsa", "BRFS3": "BRF S.A.", "CSNA3": "CSN Siderúrgica",
+  "EMBR3": "Embraer", "VBBR3": "Vibra Energia", "RRRP3": "Brava Energia",
+  
+  // --- VAREJO & CONSUMO ---
+  "AMER3": "Americanas", "VIIA3": "Grupo Casas Bahia", "BHIA3": "Grupo Casas Bahia",
+  "ARZZ3": "Arezzo", "SOMA3": "Grupo Soma", "ALOS3": "Allos (Shoppings)",
+  "IGTI11": "Iguatemi", "MULT3": "Multiplan", "PETZ3": "Petz",
+  "SMTO3": "São Martinho", "MDIA3": "M. Dias Branco", "CRFB3": "Carrefour Brasil",
+  "ASAI3": "Assaí Atacadista", "PCAR3": "Pão de Açúcar", "NTCO3": "Natura &Co",
+  "CVCB3": "CVC Viagens", "EZTC3": "EZTEC", "CYRE3": "Cyrela",
+  "MRVE3": "MRV Engenharia", "JHSF3": "JHSF", "TEND3": "Tenda",
+
+  // --- SAÚDE & SEGUROS ---
+  "FLRY3": "Fleury", "ODPV3": "Odontoprev", "QUAL3": "Qualicorp",
+  "BBSE3": "BB Seguridade", "CXSE3": "Caixa Seguridade", "PSSA3": "Porto Seguro",
+  "IRBR3": "IRB Brasil", "SULA11": "SulAmérica",
+
+  // --- UTILIDADES & INDÚSTRIA ---
+  "TAEE11": "Taesa Unit", "ALUP11": "Alupar", "TRPL4": "ISA CTEEP",
+  "ENGI11": "Energisa", "NEOE3": "Neoenergia", "CPFE3": "CPFL Energia",
+  "EGIE3": "Engie Brasil", "AURE3": "Auren Energia", "CSMG3": "Copasa",
+  "SAPR11": "Sanepar", "KLBN11": "Klabin Unit", "DXCO3": "Dexco (Duratex)",
+  "USIM5": "Usiminas PNA", "GOAU4": "Metalúrgica Gerdau", "FESA4": "Ferbasa",
+  "UNIP6": "Unipar PNB", "BRKM5": "Braskem PNA",
+  
+  // --- TECNOLOGIA & DIVERSOS ---
+  "TOTS3": "Totvs", "LWSA3": "Locaweb", "CASH3": "Méliuz",
+  "INTB3": "Intelbras", "POSI3": "Positivo", "MLAS3": "Multilaser",
+  "OIBR3": "Oi S.A.", "CIEL3": "Cielo", "STBP3": "Santos Brasil",
+  "AZUL4": "Azul Linhas Aéreas", "GOLL4": "Gol Linhas Aéreas", "CIGN3": "Cigna",
+  "COGN3": "Cogna Educação", "YDUQS3": "Yduqs (Estácio)", "SEER3": "Ser Educacional"
 };
 
 // --- COMPONENTE DE LOGO ---
@@ -137,7 +172,6 @@ export default function App() {
 
   const rankedStocks = useMemo(() => {
     return STOCKS_DB.map((stock) => {
-      // Aqui mantemos o cálculo interno de coerência apenas para ordenação, se necessário
       const esgWeight = userProfile.esgImportance;
       const score = stock.esgScore * esgWeight + stock.financialScore * (1 - esgWeight);
       return { ...stock, coherenceScore: Math.round(score) };
@@ -146,10 +180,10 @@ export default function App() {
 
   const displayedStocks = useMemo(() => {
     const enriched = marketStocks.map(stock => {
-      // 1. DADOS ESG (Novo Algoritmo Livo)
-      // score: Já vem calculado do backend (Base 10 + Índices)
+      // 1. DADOS ESG
       const b3Data = esgMap[stock.ticker] || { score: 10, badges: [] };
       
+      // 2. DETETIVE DE NOMES (Use o Dicionário Mestre ou a API)
       let displayName = STOCK_NAMES_FIX[stock.ticker] || stock.name;
       if (displayName.endsWith('.SA')) displayName = displayName.replace('.SA', '');
 
@@ -158,7 +192,6 @@ export default function App() {
 
     return enriched.filter(stock => {
        if (!filterEsgOnly) return true;
-       // Filtra usando a Nota Livo Real
        return stock.score >= 50;
     });
   }, [marketStocks, filterEsgOnly, esgMap]);
@@ -243,10 +276,6 @@ export default function App() {
               )}
               
               {displayedStocks.map((stock) => {
-                // CORREÇÃO CRÍTICA: Agora usamos DIRETAMENTE a stock.score (Nota Livo Real)
-                // Removemos o "Math.round(...)" que misturava com perfil financeiro.
-                // O valor exibido será exatamente o que vem do algoritmo B3.
-                
                 return (
                  <div
                    key={stock.ticker}
@@ -256,7 +285,6 @@ export default function App() {
                          description: stock.description || `Ações da ${stock.name}`,
                          esgScore: stock.score, 
                          tags: stock.badges, 
-                         // Passamos a nota Livo Pura para o modal também
                          coherenceScore: stock.score,
                          volatility: "Média", dividendYield: stock.dividendYield || 0, peRatio: stock.peRatio || 0, roe: stock.roe || 0
                       };
@@ -272,14 +300,12 @@ export default function App() {
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-1">
                              <h4 className="font-bold text-gray-900">{stock.ticker}</h4>
-                             {/* Só mostra a folha se tiver Nota Livo Alta (ex: > 60) ou Badges */}
                              {stock.score >= 50 && <Leaf size={12} className="text-emerald-500" fill="currentColor"/>}
                           </div>
                           <p className="text-xs text-gray-500 truncate">{stock.name}</p>
                         </div>
                         <div className="text-right shrink-0">
                             <div className="font-bold text-gray-900">R$ {stock.price?.toFixed(2)}</div>
-                            {/* EXIBIÇÃO DA NOTA LIVO PURA */}
                             <div className="text-xs font-bold text-emerald-600">
                                 {stock.score} pts
                             </div>
