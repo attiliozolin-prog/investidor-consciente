@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { ArrowRight, Leaf, TrendingUp, Shield, Heart } from "lucide-react"; 
+import { ArrowRight, Leaf, TrendingUp, Shield, Heart, Coins } from "lucide-react"; 
 import {
   InvestmentGoal,
   RiskProfile,
@@ -23,6 +23,15 @@ export default function Onboarding({ onComplete }: Props) {
   });
 
   const next = () => setStep((s) => s + 1);
+
+  // Função auxiliar para descrever o nível ESG escolhido
+  const getEsgLabel = (value: number) => {
+    if (value <= 0.2) return "Prioridade total em Lucro";
+    if (value <= 0.4) return "Foco maior em Retorno";
+    if (value <= 0.6) return "Equilíbrio entre Lucro e Impacto";
+    if (value <= 0.8) return "Foco maior em Sustentabilidade";
+    return "Prioridade total em Impacto ESG";
+  };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-[#F9FAFB] px-6">
@@ -50,7 +59,6 @@ export default function Onboarding({ onComplete }: Props) {
                    alt="Livo Logo" 
                    className="w-full h-full object-contain"
                    onError={(e) => {
-                     // Fallback: Se o logo não carregar, injeta o ícone da folha via SVG
                      e.currentTarget.style.display = 'none';
                      e.currentTarget.parentElement!.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z"/><path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12"/></svg>';
                    }}
@@ -205,22 +213,36 @@ export default function Onboarding({ onComplete }: Props) {
           </div>
         )}
 
-        {/* STEP 5 — VALORES */}
+        {/* STEP 5 — VALORES (VISUAL MELHORADO) */}
         {step === 5 && (
           <div className="space-y-6 animate-in fade-in">
             <h2 className="text-2xl font-bold text-gray-900">
-              Invista com consciência e responsabilidade
+              Invista com consciência
             </h2>
 
             <p className="text-sm text-gray-600">
-              A Livo te ajuda a equilibrar rendimentos com responsabilidade social e ambiental.
+              A Livo te ajuda a equilibrar lucros com responsabilidade social e ambiental.
             </p>
 
-            <div className="bg-gray-50 p-6 rounded-2xl space-y-4 border border-gray-100">
-              <div className="flex justify-between text-sm font-semibold text-gray-500">
-                <span>Foco em Retorno</span>
-                <span>Foco em Impacto</span>
+            <div className="bg-white p-6 rounded-2xl space-y-6 border border-gray-200 shadow-sm">
+              {/* Labels com Ícones */}
+              <div className="flex justify-between items-end">
+                <div className="flex flex-col items-start gap-1">
+                  <div className="p-2 bg-gray-100 rounded-lg text-gray-500">
+                     <Coins size={20} />
+                  </div>
+                  <span className="text-xs font-bold text-gray-500 uppercase tracking-wide">Foco em<br/>Retorno</span>
+                </div>
+                
+                <div className="flex flex-col items-end gap-1">
+                  <div className="p-2 bg-emerald-100 rounded-lg text-emerald-600">
+                     <Leaf size={20} />
+                  </div>
+                  <span className="text-xs font-bold text-emerald-600 text-right uppercase tracking-wide">Foco em<br/>Impacto</span>
+                </div>
               </div>
+
+              {/* Slider */}
               <input
                 type="range"
                 min={0}
@@ -235,6 +257,13 @@ export default function Onboarding({ onComplete }: Props) {
                 }
                 className="w-full accent-emerald-600 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
               />
+
+              {/* Feedback de Texto */}
+              <div className="text-center">
+                 <span className="inline-block px-3 py-1 bg-gray-50 border border-gray-100 rounded-full text-xs font-bold text-gray-700">
+                    {getEsgLabel(profile.esgImportance)}
+                 </span>
+              </div>
             </div>
 
             <button
