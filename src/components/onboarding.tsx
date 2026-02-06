@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { ArrowRight, Leaf, TrendingUp, Shield, Heart } from "lucide-react"; // Adicionei Heart para 'Vida'
+import { ArrowRight, Leaf, TrendingUp, Shield, Heart } from "lucide-react"; 
 import {
   InvestmentGoal,
   RiskProfile,
@@ -43,8 +43,18 @@ export default function Onboarding({ onComplete }: Props) {
         {step === 1 && (
           <div className="space-y-6 animate-in fade-in">
             <div className="flex justify-center mb-4">
-               <div className="w-16 h-16 bg-emerald-100 rounded-full flex items-center justify-center text-emerald-600">
-                 <Leaf size={32} />
+               {/* LOGO DA LIVO NO ONBOARDING */}
+               <div className="w-20 h-20 bg-emerald-100 rounded-full flex items-center justify-center text-emerald-600 p-4 overflow-hidden">
+                 <img 
+                   src="/logo.png" 
+                   alt="Livo Logo" 
+                   className="w-full h-full object-contain"
+                   onError={(e) => {
+                     // Fallback: Se o logo não carregar, injeta o ícone da folha via SVG
+                     e.currentTarget.style.display = 'none';
+                     e.currentTarget.parentElement!.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z"/><path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12"/></svg>';
+                   }}
+                 />
                </div>
             </div>
             
@@ -73,7 +83,7 @@ export default function Onboarding({ onComplete }: Props) {
           </div>
         )}
 
-        {/* STEP 2 — EXPERIÊNCIA (Tom de Voz: Acolhedor) */}
+        {/* STEP 2 — EXPERIÊNCIA */}
         {step === 2 && (
           <div className="space-y-6 animate-in fade-in">
             <h2 className="text-2xl font-bold text-gray-900">
@@ -112,7 +122,7 @@ export default function Onboarding({ onComplete }: Props) {
           </div>
         )}
 
-        {/* STEP 3 — OBJETIVO (Foco na Vida) */}
+        {/* STEP 3 — OBJETIVO */}
         {step === 3 && (
           <div className="space-y-6 animate-in fade-in">
             <h2 className="text-2xl font-bold text-gray-900">
@@ -138,7 +148,7 @@ export default function Onboarding({ onComplete }: Props) {
           </div>
         )}
 
-        {/* STEP 4 — RISCO (Tranquilidade) */}
+        {/* STEP 4 — RISCO */}
         {step === 4 && (
           <div className="space-y-6 animate-in fade-in">
             <h2 className="text-2xl font-bold text-gray-900">
@@ -195,7 +205,7 @@ export default function Onboarding({ onComplete }: Props) {
           </div>
         )}
 
-        {/* STEP 5 — VALORES (Essência Livo) */}
+        {/* STEP 5 — VALORES */}
         {step === 5 && (
           <div className="space-y-6 animate-in fade-in">
             <h2 className="text-2xl font-bold text-gray-900">
