@@ -23,7 +23,6 @@ import { STOCKS_DB } from "./data/stocks";
 import { MarketService, EsgScoreData } from "./services/market";
 
 // --- DICIONÁRIO DE NOMES (RESTITUIDO) ---
-// Garante nomes bonitos para as principais, já que estamos sem a HG.
 const STOCK_NAMES_FIX: Record<string, string> = {
   "VALE3": "Vale S.A.", "PETR4": "Petrobras PN", "PETR3": "Petrobras ON",
   "ITUB4": "Itaú Unibanco", "BBDC4": "Bradesco PN", "BBAS3": "Banco do Brasil",
@@ -36,12 +35,10 @@ const STOCK_NAMES_FIX: Record<string, string> = {
   "CSAN3": "Cosan"
 };
 
-// --- COMPONENTE DE LOGO (SOMENTE INICIAIS OU GITHUB) ---
-// Removemos a tentativa de usar o logo da API para evitar o ícone roxo genérico.
+// --- COMPONENTE DE LOGO ---
 const StockLogo = ({ ticker, size = "md" }: { ticker: string, size?: "sm" | "md" | "lg" }) => {
   const [errorCount, setErrorCount] = useState(0);
   
-  // Fontes: Apenas repositórios limpos. Se falhar, vai pra inicial.
   const sources = [
     `https://raw.githubusercontent.com/thecapybara/br-logos/main/logos/${ticker.toUpperCase()}.png`,
     `https://raw.githubusercontent.com/lbcosta/b3-logos/main/png/${ticker.toUpperCase()}.png`
@@ -53,7 +50,6 @@ const StockLogo = ({ ticker, size = "md" }: { ticker: string, size?: "sm" | "md"
     lg: "w-14 h-14 text-sm"
   };
 
-  // Se falhar nos repositórios, mostra Avatar (Iniciais)
   if (errorCount >= sources.length) {
     return (
       <div className={`${sizeClasses[size]} rounded-lg bg-emerald-50 text-emerald-700 font-bold flex items-center justify-center border border-emerald-100 select-none`}>
@@ -151,12 +147,12 @@ export default function App() {
     const enriched = marketStocks.map(stock => {
       const b3Data = esgMap[stock.ticker] || { score: 10, badges: [] };
       
-      // LÓGICA DE NOME: Usa o dicionário se tiver, senão usa o que veio da API
       let displayName = STOCK_NAMES_FIX[stock.ticker] || stock.name;
-      // Remove ".SA" se vier no nome (comum na Brapi)
       if (displayName.endsWith('.SA')) displayName = displayName.replace('.SA', '');
 
-      return { ...stock, name: displayName, ...b3Data };
+      // CORREÇÃO AQUI: Mudamos a ordem. Primeiro espalha stock e b3Data, 
+      // e por ÚLTIMO definimos o name. Isso satisfaz o compilador.
+      return { ...stock, ...b3Data, name: displayName };
     });
 
     return enriched.filter(stock => {
