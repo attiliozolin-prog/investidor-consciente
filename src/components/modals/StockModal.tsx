@@ -17,16 +17,14 @@ const BADGE_DEFINITIONS: Record<string, string> = {
   "MAT": "Materiais Básicos: Siderurgia, mineração e papel e celulose."
 };
 
-// --- COMPONENTE DE LOGO ATUALIZADO ---
-const ModalStockLogo = ({ ticker, logoUrl, size = "lg" }: { ticker: string, logoUrl?: string, size?: "sm" | "md" | "lg" }) => {
+// --- COMPONENTE DE LOGO (REVERTIDO) ---
+const ModalStockLogo = ({ ticker, size = "lg" }: { ticker: string, size?: "sm" | "md" | "lg" }) => {
   const [errorCount, setErrorCount] = useState(0);
   
-  // Prioriza a URL que vem da Brapi (logoUrl)
   const sources = [
-    logoUrl,
     `https://raw.githubusercontent.com/thecapybara/br-logos/main/logos/${ticker.toUpperCase()}.png`,
     `https://raw.githubusercontent.com/lbcosta/b3-logos/main/png/${ticker.toUpperCase()}.png`
-  ].filter(Boolean) as string[];
+  ];
 
   const sizeClasses = {
     sm: "w-8 h-8 text-[10px]",
@@ -130,8 +128,7 @@ const StockModal: React.FC<StockModalProps> = ({ stock, user, coherenceScore, on
         {/* Header */}
         <div className="p-6 border-b border-gray-100 flex justify-between items-start bg-gray-50/50">
           <div className="flex items-center gap-4">
-            {/* AQUI ESTÁ A MUDANÇA: Passamos stock.logo */}
-            <ModalStockLogo ticker={stock.ticker} logoUrl={stock.logo} size="lg" />
+            <ModalStockLogo ticker={stock.ticker} size="lg" />
             <div>
               <h2 className="text-2xl font-bold text-gray-900 leading-tight">{stock.ticker}</h2>
               <p className="text-sm text-gray-500 font-medium">{stock.name}</p>
