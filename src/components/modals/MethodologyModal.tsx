@@ -39,7 +39,7 @@ const MethodologyModal: React.FC<Props> = ({ onClose }) => {
             </p>
           </div>
 
-          {/* Tabela de Pontos */}
+          {/* Tabela de Pontos (AJUSTADA PARA SOMA 100) */}
           <div className="rounded-xl overflow-hidden border border-gray-200 shadow-sm">
             <table className="w-full text-sm text-left">
               <thead className="bg-gray-900 text-white">
@@ -86,10 +86,10 @@ const MethodologyModal: React.FC<Props> = ({ onClose }) => {
                   </td>
                 </tr>
                  <tr className="bg-gray-50">
-                  <td className="px-4 py-3 font-bold text-gray-500">+5</td>
+                  <td className="px-4 py-3 font-bold text-gray-500">+10</td> {/* AJUSTADO PARA +10 */}
                   <td className="px-4 py-3 font-bold text-gray-500">BASE</td>
                   <td className="px-4 py-3 text-gray-500 text-xs">
-                    Nota inicial para toda empresa listada na B3 (auditada e pública).
+                    Nota inicial para toda empresa listada na B3 (auditada, pública e regulada pela CVM).
                   </td>
                 </tr>
               </tbody>
@@ -97,56 +97,37 @@ const MethodologyModal: React.FC<Props> = ({ onClose }) => {
           </div>
 
           <p className="text-xs text-center text-gray-500 italic">
-            <strong>Nota 100:</strong> Indica que a empresa atende a todos os critérios e participa de todos os índices monitorados.
+            <strong>Nota 100:</strong> Atingida quando a empresa participa de todos os índices monitorados acima (10 + 90 = 100).
           </p>
 
-          {/* Links e Fontes (ATUALIZADOS PARA ESTRUTURA 2026) */}
+          {/* Links e Fontes (LINKS SEGUROS PARA HUBs) */}
           <div className="border-t border-gray-100 pt-6 pb-2">
             <h4 className="font-bold text-gray-900 mb-4 flex items-center gap-2">
               <ExternalLink size={16} /> Fontes Oficiais (Portal B3)
             </h4>
             
-            {/* Grid ajustado para 5 itens (último ocupa linha inteira) */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
               
-              {/* 1. ISE (Link Novo) */}
-              <a href="https://www.b3.com.br/pt_br/indices/indices-de-sustentabilidade/indice-de-sustentabilidade-empresarial-ise.htm" target="_blank" rel="noreferrer" 
-                 className="flex items-center gap-2 text-gray-700 hover:text-emerald-700 bg-gray-50 hover:bg-emerald-50 p-3 rounded-lg border border-gray-100 hover:border-emerald-200 transition-all group">
+              {/* HUB SUSTENTABILIDADE (ISE, ICO2, IDIVERSA, IGPTW) */}
+              <a href="https://www.b3.com.br/pt_br/market-data-e-indices/indices/indices-de-sustentabilidade/" target="_blank" rel="noreferrer" 
+                 className="flex items-center gap-2 text-gray-700 hover:text-emerald-700 bg-gray-50 hover:bg-emerald-50 p-3 rounded-lg border border-gray-100 hover:border-emerald-200 transition-all group sm:col-span-2">
                 <LinkIcon size={14} className="text-gray-400 group-hover:text-emerald-500 shrink-0"/> 
-                <span>Metodologia <strong>ISE B3</strong></span>
+                <span>Hub de Índices ESG <strong>(ISE, ICO2, IDIVERSA, IGPTW)</strong></span>
               </a>
 
-              {/* 2. ICO2 (Link Novo) */}
-              <a href="https://www.b3.com.br/pt_br/indices/indices-de-sustentabilidade/indice-carbono-eficiente-ico2.htm" target="_blank" rel="noreferrer" 
-                 className="flex items-center gap-2 text-gray-700 hover:text-emerald-700 bg-gray-50 hover:bg-emerald-50 p-3 rounded-lg border border-gray-100 hover:border-emerald-200 transition-all group">
+              {/* HUB GOVERNANÇA (IGCT) */}
+              <a href="https://www.b3.com.br/pt_br/market-data-e-indices/indices/indices-de-governanca/" target="_blank" rel="noreferrer" 
+                 className="flex items-center gap-2 text-gray-700 hover:text-emerald-700 bg-gray-50 hover:bg-emerald-50 p-3 rounded-lg border border-gray-100 hover:border-emerald-200 transition-all group sm:col-span-2">
                 <LinkIcon size={14} className="text-gray-400 group-hover:text-emerald-500 shrink-0"/> 
-                <span>Metodologia <strong>ICO2 B3</strong></span>
+                <span>Hub de Governança <strong>(IGCT, Novo Mercado)</strong></span>
               </a>
 
-              {/* 3. IDIVERSA (Link Novo) */}
-              <a href="https://www.b3.com.br/pt_br/indices/indices-de-sustentabilidade/indice-de-diversidade-idiversa.htm" target="_blank" rel="noreferrer" 
-                 className="flex items-center gap-2 text-gray-700 hover:text-emerald-700 bg-gray-50 hover:bg-emerald-50 p-3 rounded-lg border border-gray-100 hover:border-emerald-200 transition-all group">
-                <LinkIcon size={14} className="text-gray-400 group-hover:text-emerald-500 shrink-0"/> 
-                <span>Metodologia <strong>IDIVERSA</strong></span>
-              </a>
-
-              {/* 4. IGCT (Link Novo - Migrado) */}
-              <a href="https://www.b3.com.br/pt_br/indices/indices-de-governanca/indice-de-governanca-corporativa-trade-igct.htm" target="_blank" rel="noreferrer" 
-                 className="flex items-center gap-2 text-gray-700 hover:text-emerald-700 bg-gray-50 hover:bg-emerald-50 p-3 rounded-lg border border-gray-100 hover:border-emerald-200 transition-all group">
-                <LinkIcon size={14} className="text-gray-400 group-hover:text-emerald-500 shrink-0"/> 
-                <span>Metodologia <strong>IGCT</strong></span>
-              </a>
-
-              {/* 5. IGPTW (Link Novo - Centralizado na última linha) */}
-              <a href="https://www.b3.com.br/pt_br/indices/indices-de-sustentabilidade/indice-gptw-b3-igptw-b3.htm" target="_blank" rel="noreferrer" 
-                 className="flex items-center justify-center gap-2 text-gray-700 hover:text-emerald-700 bg-gray-50 hover:bg-emerald-50 p-3 rounded-lg border border-gray-100 hover:border-emerald-200 transition-all group sm:col-span-2">
-                <LinkIcon size={14} className="text-gray-400 group-hover:text-emerald-500 shrink-0"/> 
-                <span>Metodologia <strong>IGPTW B3</strong></span>
-              </a>
             </div>
+            <p className="text-[10px] text-gray-400 mt-2 italic">
+              * Redireciona para a página oficial da B3 onde constam as carteiras vigentes.
+            </p>
           </div>
 
-          {/* Aviso */}
           <div className="text-[10px] text-gray-400 text-center border-t border-gray-100 pt-4">
             A Nota Livo é uma ferramenta de auxílio baseada em critérios técnicos públicos. Não constitui recomendação de compra ou venda.
           </div>
