@@ -19,7 +19,7 @@ import MethodologyModal from "./components/modals/MethodologyModal";
 import HomeTab from "./components/layout/tabs/HomeTab";
 import PortfolioDashboard from "./components/layout/tabs/PortfolioDashboard";
 import { Transaction, Holding, UserProfile } from "./types";
-import { STOCKS_DB } from "./data/stocks"; // Essa lista inicial ainda existe, mas vamos expandi-la
+import { STOCKS_DB } from "./data/stocks";
 import { MarketService, EsgScoreData } from "./services/market";
 
 // --- DICIONÁRIO MESTRE DE NOMES B3 ---
@@ -37,13 +37,17 @@ const STOCK_NAMES_FIX: Record<string, string> = {
   "GOLL4": "Gol Linhas Aéreas", "OIBR3": "Oi S.A.", "CASH3": "Méliuz"
 };
 
-// --- COMPONENTE DE LOGO ---
-const StockLogo = ({ ticker, size = "md" }: { ticker: string, size?: "sm" | "md" | "lg" }) => {
+// --- COMPONENTE DE LOGO ATUALIZADO (Aceita URL da Brapi) ---
+const StockLogo = ({ ticker, logoUrl, size = "md" }: { ticker: string, logoUrl?: string, size?: "sm" | "md" | "lg" }) => {
   const [errorCount, setErrorCount] = useState(0);
+  
+  // Fontes: 1. Brapi (se houver), 2. GitHub Capybara, 3. GitHub Lbcosta
   const sources = [
+    logoUrl, 
     `https://raw.githubusercontent.com/thecapybara/br-logos/main/logos/${ticker.toUpperCase()}.png`,
     `https://raw.githubusercontent.com/lbcosta/b3-logos/main/png/${ticker.toUpperCase()}.png`
-  ];
+  ].filter(Boolean) as string[]; // Remove undefined se não tiver logoUrl
+
   const sizeClasses = { sm: "w-8 h-8 text-[10px]", md: "w-10 h-10 text-xs", lg: "w-14 h-14 text-sm" };
 
   if (errorCount >= sources.length) {
@@ -55,7 +59,12 @@ const StockLogo = ({ ticker, size = "md" }: { ticker: string, size?: "sm" | "md"
   }
   return (
     <div className={`${sizeClasses[size]} rounded-lg bg-white flex items-center justify-center overflow-hidden border border-gray-100 shadow-sm p-0.5`}>
-      <img src={sources[errorCount]} alt={ticker} className="w-full h-full object-contain" onError={() => setErrorCount(prev => prev + 1)} />
+      <img 
+        src={sources[errorCount]} 
+        alt={ticker} 
+        className="w-full h-full object-contain" 
+        onError={() => setErrorCount(prev => prev + 1)} 
+      />
     </div>
   );
 };
@@ -72,8 +81,6 @@ export default function App() {
     try { return JSON.parse(localStorage.getItem("transactions") || "[]"); } catch { return []; }
   });
 
-  // ESTADO CRÍTICO: Dynamic Stocks (Ações que o usuário adicionou e a gente precisa rastrear o preço)
-  // Inicializa com o STOCKS_DB (fixo), mas permite adicionar novos.
   const [knownStocks, setKnownStocks] = useState<any[]>(STOCKS_DB);
 
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -94,7 +101,6 @@ export default function App() {
     MarketService.getEsgScores().then(map => { setEsgMap(map); setIsEsgMapLoaded(true); });
   }, []);
 
-  // Busca do Mercado (Aba Explorar)
   useEffect(() => {
     if (activeTab === "market") {
       const delayDebounceFn = setTimeout(() => {
@@ -107,38 +113,24 @@ export default function App() {
     }
   }, [activeTab, searchTerm]);
 
-  // CÁLCULO DE HOLDINGS (Corrigido para usar knownStocks)
   const holdings = useMemo(() => {
     const map = new Map<string, { qty: number; totalCost: number }>();
-    
     transactions.forEach((t) => {
       const current = map.get(t.ticker) || { qty: 0, totalCost: 0 };
       if (t.type === "BUY") { 
         map.set(t.ticker, { qty: current.qty + t.quantity, totalCost: current.totalCost + (t.quantity * t.price) }); 
       } else { 
-        // Lógica de Venda (Preço Médio)
         const avgPrice = current.qty > 0 ? current.totalCost / current.qty : 0;
         map.set(t.ticker, { qty: current.qty - t.quantity, totalCost: current.totalCost - (t.quantity * avgPrice) }); 
       }
     });
 
     const result: Holding[] = [];
-    
     map.forEach((value, ticker) => {
-      // Filtra ativos zerados (vendeu tudo)
-      if (value.qty > 0.00001 || (value.totalCost > 0 && ticker === "FIXED")) { // Ajuste para float precision
-        
-        // 1. Tenta achar na lista dinâmica (que inclui os novos adicionados)
+      if (value.qty > 0.00001 || (value.totalCost > 0 && ticker === "FIXED")) {
         let stock = knownStocks.find((s) => s.ticker === ticker);
-        
-        // 2. Fallback para Renda Fixa ou Ativos Desconhecidos
         const isFixedIncome = stock?.assetType === 'fixed_income' || ticker.includes("CDB") || ticker.includes("TESOURO");
-        
-        // CORREÇÃO DO ZERO REAIS:
-        // Se achou a stock, usa o preço dela. Se não achou, usa o Preço Médio (Cost) como fallback temporário.
         const currentPrice = stock ? stock.price : (value.totalCost / (value.qty || 1));
-        
-        // Cálculo do Total
         const totalValue = isFixedIncome ? value.totalCost : (value.qty * currentPrice);
 
         result.push({
@@ -150,14 +142,13 @@ export default function App() {
           totalValue: totalValue,
           profit: totalValue - value.totalCost,
           profitPercent: value.totalCost > 0 ? ((totalValue - value.totalCost) / value.totalCost) * 100 : 0,
-          allocationPercent: 0 // Será calculado depois
+          allocationPercent: 0
         });
       }
     });
     return result;
-  }, [transactions, knownStocks]); // Recalcula se transactions OU knownStocks mudar
+  }, [transactions, knownStocks]);
 
-  // Ranking ESG
   const rankedStocks = useMemo(() => {
     return knownStocks.map((stock) => {
       const esgWeight = userProfile.esgImportance;
@@ -166,7 +157,6 @@ export default function App() {
     }).sort((a, b) => b.coherenceScore - a.coherenceScore);
   }, [userProfile, knownStocks]);
 
-  // Lista da Aba Mercado
   const displayedStocks = useMemo(() => {
     const enriched = marketStocks.map(stock => {
       const b3Data = esgMap[stock.ticker] || { score: 10, badges: [] };
@@ -177,7 +167,6 @@ export default function App() {
     return enriched.filter(stock => !filterEsgOnly || stock.score >= 50);
   }, [marketStocks, filterEsgOnly, esgMap]);
 
-  // --- FUNÇÃO CRÍTICA ATUALIZADA ---
   const handleAddTransaction = (t: Omit<Transaction, "id">, extraStockData?: any) => {
     const updated = [...transactions, { ...t, id: Math.random().toString(36).substr(2, 9) }];
     setTransactions(updated);
@@ -187,15 +176,12 @@ export default function App() {
       setKnownStocks(prev => {
         const exists = prev.find(s => s.ticker === extraStockData.ticker);
         if (exists) {
-            // Se já existe, atualiza preço se necessário
-            return prev.map(s => s.ticker === extraStockData.ticker ? { ...s, price: extraStockData.price } : s);
+            return prev.map(s => s.ticker === extraStockData.ticker ? { ...s, price: extraStockData.price, logo: extraStockData.logo || s.logo } : s);
         }
-        // Se é novo, adiciona à lista para que o cálculo funcione
         return [...prev, {
             ...extraStockData,
             esgScore: extraStockData.esgScore || 50,
             financialScore: 60,
-            // CORREÇÃO AQUI: Prioriza o assetType explícito (ex: 'fixed_income')
             assetType: extraStockData.assetType || (extraStockData.stock?.endsWith('11') ? 'fii' : 'stock')
         }];
       });
@@ -220,7 +206,6 @@ export default function App() {
   return (
     <div className="max-w-5xl mx-auto bg-[#F9FAFB] min-h-screen relative shadow-2xl border-x border-gray-200">
       
-      {/* HEADER */}
       <header className="px-6 pt-12 pb-4 flex justify-between items-center bg-white sticky top-0 z-20 border-b border-gray-100">
         <div className="flex items-center gap-3">
           <div className="h-10 w-auto max-w-[120px] flex items-center justify-start overflow-hidden">
@@ -246,7 +231,6 @@ export default function App() {
         </button>
       </header>
 
-      {/* MAIN */}
       <main className="p-6">
         {activeTab === "home" && <HomeTab userProfile={userProfile} transactions={transactions} onAddTransaction={openBuyModal} showValues={showValues} onToggleValues={() => setShowValues(!showValues)} holdings={holdings} rankedStocks={rankedStocks} />}
         {activeTab === "portfolio" && <PortfolioDashboard userProfile={userProfile} transactions={transactions} onAddTransaction={openBuyModal} onSellTransaction={openSellModal} onRetakeOnboarding={handleRetakeOnboarding} onOpenCustomStrategy={() => setIsCustomStrategyOpen(true)} onDeleteAsset={handleDeleteAsset} onDeleteTransaction={() => {}} rankedStocks={rankedStocks} showValues={showValues} />}
@@ -285,7 +269,6 @@ export default function App() {
               {displayedStocks.map((stock) => (
                  <div key={stock.ticker} onClick={() => {
                       const fullStockData = { ...stock, coherenceScore: stock.score, tags: stock.badges };
-                      // Adiciona ao knownStocks ao clicar, para garantir
                       if (!knownStocks.find(s => s.ticker === stock.ticker)) {
                           setKnownStocks(prev => [...prev, fullStockData]);
                       }
@@ -294,7 +277,8 @@ export default function App() {
                    className="bg-white p-4 rounded-2xl border border-gray-100 flex justify-between items-center cursor-pointer hover:border-emerald-200 hover:shadow-md transition-all"
                  >
                     <div className="flex items-center gap-3 w-full">
-                        <div className="shrink-0"><StockLogo ticker={stock.ticker} size="md" /></div>
+                        {/* AQUI ESTÁ A MUDANÇA: Passamos stock.logo para o componente */}
+                        <div className="shrink-0"><StockLogo ticker={stock.ticker} logoUrl={stock.logo} size="md" /></div>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-1">
                              <h4 className="font-bold text-gray-900">{stock.ticker}</h4>
