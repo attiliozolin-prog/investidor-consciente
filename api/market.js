@@ -1,5 +1,5 @@
 // api/market.js
-// VERSÃO: LISTÃO ROBUSTO (Busca Nome em múltiplos campos)
+// VERSÃO: LISTÃO ROBUSTO (Com Autenticação Brapi)
 
 module.exports = async (req, res) => {
   // Cache curto (30s) para manter preço atualizado
@@ -8,21 +8,30 @@ module.exports = async (req, res) => {
 
   const { search } = req.query;
 
+  // PEGA O TOKEN DAS VARIÁVEIS DE AMBIENTE (VERCEL)
+  const token = process.env.BRAPI_API_KEY;
+
   try {
     let url = '';
+    
+    // Monta a Query String com o token (se existir)
+    const tokenParam = token ? `&token=${token}` : '';
 
     if (search) {
       // Busca específica (ex: "Sanepar")
-      url = `https://brapi.dev/api/quote/list?search=${search}&limit=20`;
+      url = `https://brapi.dev/api/quote/list?search=${search}&limit=20${tokenParam}`;
     } else {
-      // Home: Top 100 ações por volume (Liquidez)
-      // Traz as empresas mais relevantes do mercado
-      url = `https://brapi.dev/api/quote/list?sortBy=volume&sortOrder=desc&limit=100`;
+      // Home: Top 100 ações por volume
+      url = `https://brapi.dev/api/quote/list?sortBy=volume&sortOrder=desc&limit=100${tokenParam}`;
     }
 
     const response = await fetch(url);
     
     if (!response.ok) {
+      // Se der erro de token (401), avisa no log
+      if (response.status === 401) {
+        console.error("Erro Brapi 401: Token inválido ou ausente. Configure BRAPI_API_KEY na Vercel.");
+      }
       throw new Error(`Erro na Brapi: ${response.status}`);
     }
 
@@ -34,15 +43,11 @@ module.exports = async (req, res) => {
       if (!item.close && !item.price) return null;
 
       // --- DETETIVE DE NOMES ---
-      // Tenta achar o nome em ordem de preferência:
-      // 1. item.name (Geralmente o nome curto)
-      // 2. item.longName (Nome completo, comum em small caps)
-      // 3. item.stock (Se não tiver nada, usa o ticker para não ficar buraco)
       const finalName = item.name || item.longName || item.stock;
 
       return {
         ticker: item.stock,
-        name: finalName,    // Agora garantimos que nunca vai vazio
+        name: finalName,
         price: item.close || item.price, 
         change: item.change || item.changePercent || 0,
         logo: item.logo,
