@@ -313,7 +313,7 @@ const HomeTab: React.FC<any> = ({
             <h3 className="font-bold text-lg text-gray-900">Insights Conscientes</h3>
           </div>
           <p className="text-sm text-gray-600 leading-relaxed">
-            Com base no seu perfil <strong>{userProfile.riskProfile}</strong>, identificamos onde você deve focar seus primeiros passos.
+            Com base no seu perfil <strong>{userProfile.riskProfile}</strong>, identificamos onde você deve focar seus próximos investimentos.
           </p>
         </div>
         <div className="p-6">
