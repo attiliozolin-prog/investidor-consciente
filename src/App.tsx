@@ -79,7 +79,8 @@ export default function App() {
   const [isCustomStrategyOpen, setIsCustomStrategyOpen] = useState(false);
   const [isMethodologyOpen, setIsMethodologyOpen] = useState(false);
 
-  const [marketStocks, setMarketStocks] = useState<any[]>([]);
+  // Inicializa com knownStocks para não ficar vazio no início
+  const [marketStocks, setMarketStocks] = useState<any[]>(STOCKS_DB);
   const [isLoadingMarket, setIsLoadingMarket] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [filterEsgOnly, setFilterEsgOnly] = useState(false);
@@ -91,8 +92,16 @@ export default function App() {
     MarketService.getEsgScores().then(map => { setEsgMap(map); setIsEsgMapLoaded(true); });
   }, []);
 
+  // --- CORREÇÃO DA BUSCA: MOSTRA PADRÃO SE VAZIO ---
   useEffect(() => {
     if (activeTab === "market") {
+      // Se a busca estiver vazia, restaura a lista padrão (knownStocks)
+      if (searchTerm.trim() === "") {
+        setMarketStocks(knownStocks);
+        return;
+      }
+
+      // Se tiver busca, chama a API
       const delayDebounceFn = setTimeout(() => {
         setIsLoadingMarket(true);
         MarketService.searchStocks(searchTerm)
@@ -101,23 +110,19 @@ export default function App() {
       }, 500);
       return () => clearTimeout(delayDebounceFn);
     }
-  }, [activeTab, searchTerm]);
+  }, [activeTab, searchTerm, knownStocks]);
 
-  // --- LÓGICA ATUALIZADA V2 (BASE NEUTRA 50) ---
+  // --- LÓGICA DE NOTA (MANTIDA V2 - BASE 50) ---
   const calculateLivoScore = (stock: any, assetType: string, esgWeight: number) => {
-    // 1. Renda Fixa: Mantemos como porto seguro neutro-positivo (60)
     if (assetType === 'fixed_income') return 60;
 
-    // 2. Score ESG (Base 50 Neutra + Bônus/Penalidades vindos da API)
-    // Se a API ainda não respondeu ou não tem dados, assume 50 (Neutro).
+    // Score ESG Base 50
     const esgScore = stock.esgScore || 50;
 
-    // 3. Score Financeiro (Baseado no Momento)
-    let financialScore = 60; // Base neutra
-    if (stock.change > 0) financialScore = 70; // Bonança
-    if (stock.change < 0) financialScore = 50; // Queda
+    let financialScore = 60; 
+    if (stock.change > 0) financialScore = 70;
+    if (stock.change < 0) financialScore = 50;
 
-    // Fórmula Ponderada
     const score = (esgScore * esgWeight) + (financialScore * (1 - esgWeight));
     return Math.round(score);
   };
@@ -178,13 +183,13 @@ export default function App() {
   // Lista da Aba Mercado
   const displayedStocks = useMemo(() => {
     const enriched = marketStocks.map(stock => {
-      // CORREÇÃO: Fallback Neutro (50) em vez de Baixo (10)
+      // Fallback Neutro (50)
       const b3Data = esgMap[stock.ticker] || { score: 50, badges: [] };
       
       let displayName = STOCK_NAMES_FIX[stock.ticker] || stock.name;
       if (displayName.endsWith('.SA')) displayName = displayName.replace('.SA', '');
       
-      // Cria Evidence Log base se não vier da API
+      // Evidence Log base se não vier da API
       const evidence = b3Data.evidence_log || (b3Data.score === 50 ? [{ type: 'BASE', desc: 'Nota Inicial Neutra', val: 50 }] : []);
 
       return { ...stock, ...b3Data, evidence_log: evidence, name: displayName };
@@ -205,7 +210,7 @@ export default function App() {
         }
         return [...prev, {
             ...extraStockData,
-            esgScore: extraStockData.esgScore || 50, // Fallback Neutro
+            esgScore: extraStockData.esgScore || 50,
             financialScore: 60,
             assetType: extraStockData.assetType || (extraStockData.stock?.endsWith('11') ? 'fii' : 'stock')
         }];
