@@ -37,9 +37,15 @@ const STOCK_NAMES_FIX: Record<string, string> = {
   "GOLL4": "Gol Linhas Aéreas", "OIBR3": "Oi S.A.", "CASH3": "Méliuz"
 };
 
-// --- COMPONENTE DE LOGO ---
+// --- COMPONENTE DE LOGO BLINDADO ---
 const StockLogo = ({ ticker, size = "md" }: { ticker: string, size?: "sm" | "md" | "lg" }) => {
   const [errorCount, setErrorCount] = useState(0);
+  
+  // PROTEÇÃO CONTRA CRASH: Se ticker for null/undefined, retorna placeholder seguro
+  if (!ticker || typeof ticker !== 'string') {
+    return <div className="w-10 h-10 bg-gray-100 rounded-lg" />;
+  }
+
   const sources = [
     `https://raw.githubusercontent.com/thecapybara/br-logos/main/logos/${ticker.toUpperCase()}.png`,
     `https://raw.githubusercontent.com/lbcosta/b3-logos/main/png/${ticker.toUpperCase()}.png`
@@ -80,7 +86,7 @@ export default function App() {
   const [isCustomStrategyOpen, setIsCustomStrategyOpen] = useState(false);
   const [isMethodologyOpen, setIsMethodologyOpen] = useState(false);
 
-  // Inicializa com knownStocks para a tela não abrir vazia
+  // Inicializa com knownStocks para não ficar vazio no início
   const [marketStocks, setMarketStocks] = useState<any[]>(STOCKS_DB);
   const [isLoadingMarket, setIsLoadingMarket] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
@@ -90,7 +96,6 @@ export default function App() {
   const [esgMap, setEsgMap] = useState<Record<string, EsgScoreData>>({});
   const [isEsgMapLoaded, setIsEsgMapLoaded] = useState(false);
 
-  // Carrega Mapa ESG ao iniciar
   useEffect(() => {
     MarketService.getEsgScores()
       .then(map => { 
@@ -100,12 +105,11 @@ export default function App() {
       .catch(err => console.error("Erro ESG:", err));
   }, []);
 
-  // --- BUSCA BLINDADA (CORREÇÃO DE CRASH) ---
+  // --- BUSCA COM DEBOUNCE ---
   useEffect(() => {
     if (activeTab === "market") {
       setSearchError(false);
       
-      // Se busca vazia, restaura lista padrão
       if (searchTerm.trim() === "") {
         setMarketStocks(knownStocks); 
         setIsLoadingMarket(false);
@@ -116,17 +120,17 @@ export default function App() {
         setIsLoadingMarket(true);
         MarketService.searchStocks(searchTerm)
           .then(data => {
-             // Proteção: Garante que é array antes de salvar
-             if (Array.isArray(data) && data.length > 0) {
+             // O Service já garante que 'data' é array e tem 'ticker'
+             if (data.length > 0) {
                setMarketStocks(data);
              } else {
-               setMarketStocks([]); // Array vazio em vez de null/undefined
+               setMarketStocks([]); 
              }
           })
           .catch(err => {
              console.error("Erro na busca:", err);
              setSearchError(true);
-             setMarketStocks([]); // Evita tela branca
+             setMarketStocks([]);
           })
           .finally(() => setIsLoadingMarket(false));
       }, 600);
@@ -134,11 +138,10 @@ export default function App() {
     }
   }, [activeTab, searchTerm, knownStocks]);
 
-  // --- CÁLCULO DE NOTA (CORREÇÃO WEGE3) ---
+  // --- CÁLCULO DE NOTA ---
   const calculateLivoScore = (stock: any, assetType: string, esgWeight: number) => {
     if (assetType === 'fixed_income') return 60;
 
-    // Normalização: Remove .SA para achar a chave correta no mapa
     const rawTicker = stock.ticker || "";
     const cleanTicker = rawTicker.replace('.SA', '').trim().toUpperCase();
     
@@ -206,22 +209,18 @@ export default function App() {
     }).sort((a, b) => b.coherenceScore - a.coherenceScore);
   }, [userProfile, knownStocks, esgMap]);
 
-  // --- LISTA DE MERCADO (PROTEÇÃO CONTRA TELA BRANCA) ---
   const displayedStocks = useMemo(() => {
-    // PROTEÇÃO: Se marketStocks for nulo/undefined, usa array vazio
     const safeStocks = Array.isArray(marketStocks) ? marketStocks : [];
     
     const enriched = safeStocks.map(stock => {
       const rawTicker = stock.ticker || "";
       const cleanTicker = rawTicker.replace('.SA', '').trim().toUpperCase();
       
-      // Busca ESG usando chave limpa (WEGE3) ou original (WEGE3.SA)
       const b3Data = esgMap[cleanTicker] || esgMap[rawTicker] || { score: 50, badges: [] };
       
       let displayName = STOCK_NAMES_FIX[cleanTicker] || stock.name || rawTicker;
       if (displayName.endsWith('.SA')) displayName = displayName.replace('.SA', '');
       
-      // Evidence log
       const evidence = b3Data.evidence_log || (b3Data.score === 50 ? [{ type: 'BASE', desc: 'Nota Inicial Neutra', val: 50 }] : []);
 
       return { 
@@ -229,7 +228,6 @@ export default function App() {
         ...b3Data, 
         evidence_log: evidence, 
         name: displayName,
-        // Força score vindo do mapa ou 50
         score: b3Data.score 
       };
     });
@@ -330,7 +328,6 @@ export default function App() {
             </div>
 
             <div className="space-y-3">
-              {/* Feedback de erro ou vazio */}
               {!isLoadingMarket && searchError && (
                  <div className="flex items-center gap-2 p-3 bg-red-50 text-red-600 rounded-xl text-sm justify-center">
                    <AlertCircle size={16} /> Falha na conexão. Tente novamente.
