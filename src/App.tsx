@@ -36,6 +36,7 @@ const STOCK_NAMES_FIX: Record<string, string> = {
   "GOLL4": "Gol Linhas Aéreas", "OIBR3": "Oi S.A.", "CASH3": "Méliuz"
 };
 
+// --- COMPONENTE DE LOGO ---
 const StockLogo = ({ ticker, size = "md" }: { ticker: string, size?: "sm" | "md" | "lg" }) => {
   const [errorCount, setErrorCount] = useState(0);
   const sources = [
@@ -102,15 +103,14 @@ export default function App() {
     }
   }, [activeTab, searchTerm]);
 
-  // --- LÓGICA ATUALIZADA (ANTI-GREENWASHING) ---
+  // --- LÓGICA ATUALIZADA V2 (BASE NEUTRA 50) ---
   const calculateLivoScore = (stock: any, assetType: string, esgWeight: number) => {
     // 1. Renda Fixa: Mantemos como porto seguro neutro-positivo (60)
     if (assetType === 'fixed_income') return 60;
 
-    // 2. Score ESG com PENALIDADE
-    // Se não tiver score (sem selo), assume 35 (Nota Baixa) em vez de 50 (Neutro).
-    // Isso impede que empresas "escuras" fiquem com nota alta só pelo lucro.
-    const esgScore = stock.esgScore || 35;
+    // 2. Score ESG (Base 50 Neutra + Bônus/Penalidades vindos da API)
+    // Se a API ainda não respondeu ou não tem dados, assume 50 (Neutro).
+    const esgScore = stock.esgScore || 50;
 
     // 3. Score Financeiro (Baseado no Momento)
     let financialScore = 60; // Base neutra
@@ -178,10 +178,16 @@ export default function App() {
   // Lista da Aba Mercado
   const displayedStocks = useMemo(() => {
     const enriched = marketStocks.map(stock => {
-      const b3Data = esgMap[stock.ticker] || { score: 10, badges: [] };
+      // CORREÇÃO: Fallback Neutro (50) em vez de Baixo (10)
+      const b3Data = esgMap[stock.ticker] || { score: 50, badges: [] };
+      
       let displayName = STOCK_NAMES_FIX[stock.ticker] || stock.name;
       if (displayName.endsWith('.SA')) displayName = displayName.replace('.SA', '');
-      return { ...stock, ...b3Data, name: displayName };
+      
+      // Cria Evidence Log base se não vier da API
+      const evidence = b3Data.evidence_log || (b3Data.score === 50 ? [{ type: 'BASE', desc: 'Nota Inicial Neutra', val: 50 }] : []);
+
+      return { ...stock, ...b3Data, evidence_log: evidence, name: displayName };
     });
     return enriched.filter(stock => !filterEsgOnly || stock.score >= 50);
   }, [marketStocks, filterEsgOnly, esgMap]);
@@ -199,7 +205,7 @@ export default function App() {
         }
         return [...prev, {
             ...extraStockData,
-            esgScore: extraStockData.esgScore || 50,
+            esgScore: extraStockData.esgScore || 50, // Fallback Neutro
             financialScore: 60,
             assetType: extraStockData.assetType || (extraStockData.stock?.endsWith('11') ? 'fii' : 'stock')
         }];
@@ -306,13 +312,13 @@ export default function App() {
                         </div>
                         <div className="text-right shrink-0">
                             <div className="font-bold text-gray-900">R$ {stock.price?.toFixed(2)}</div>
-                            <div className="text-xs font-bold text-emerald-600">{stock.score} pts</div>
+                            <div className={`text-xs font-bold ${stock.score >= 50 ? "text-emerald-600" : "text-gray-400"}`}>{stock.score} pts</div>
                         </div>
                     </div>
                  </div>
               ))}
             </div>
-            <div className="text-center text-[10px] text-gray-400 mt-4">Dados: Brapi. | Scores: B3.</div>
+            <div className="text-center text-[10px] text-gray-400 mt-4">Dados: Brapi. | Scores: B3 + Dossiê Livo.</div>
           </div>
         )}
       </main>
