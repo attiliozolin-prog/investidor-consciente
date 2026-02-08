@@ -1,7 +1,6 @@
 import React, { useState, useMemo, useEffect } from "react";
 import {
   Search,
-  User,
   Briefcase,
   Compass,
   Home,
@@ -37,15 +36,12 @@ const STOCK_NAMES_FIX: Record<string, string> = {
   "GOLL4": "Gol Linhas Aéreas", "OIBR3": "Oi S.A.", "CASH3": "Méliuz"
 };
 
-// --- COMPONENTE DE LOGO (REVERTIDO PARA GITHUB ONLY) ---
 const StockLogo = ({ ticker, size = "md" }: { ticker: string, size?: "sm" | "md" | "lg" }) => {
   const [errorCount, setErrorCount] = useState(0);
-  
   const sources = [
     `https://raw.githubusercontent.com/thecapybara/br-logos/main/logos/${ticker.toUpperCase()}.png`,
     `https://raw.githubusercontent.com/lbcosta/b3-logos/main/png/${ticker.toUpperCase()}.png`
   ];
-
   const sizeClasses = { sm: "w-8 h-8 text-[10px]", md: "w-10 h-10 text-xs", lg: "w-14 h-14 text-sm" };
 
   if (errorCount >= sources.length) {
@@ -74,7 +70,6 @@ export default function App() {
     try { return JSON.parse(localStorage.getItem("transactions") || "[]"); } catch { return []; }
   });
 
-  // Mantém a lógica de KnownStocks para evitar o erro de R$ 0
   const [knownStocks, setKnownStocks] = useState<any[]>(STOCKS_DB);
 
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -107,6 +102,26 @@ export default function App() {
     }
   }, [activeTab, searchTerm]);
 
+  // --- LÓGICA ATUALIZADA (ANTI-GREENWASHING) ---
+  const calculateLivoScore = (stock: any, assetType: string, esgWeight: number) => {
+    // 1. Renda Fixa: Mantemos como porto seguro neutro-positivo (60)
+    if (assetType === 'fixed_income') return 60;
+
+    // 2. Score ESG com PENALIDADE
+    // Se não tiver score (sem selo), assume 35 (Nota Baixa) em vez de 50 (Neutro).
+    // Isso impede que empresas "escuras" fiquem com nota alta só pelo lucro.
+    const esgScore = stock.esgScore || 35;
+
+    // 3. Score Financeiro (Baseado no Momento)
+    let financialScore = 60; // Base neutra
+    if (stock.change > 0) financialScore = 70; // Bonança
+    if (stock.change < 0) financialScore = 50; // Queda
+
+    // Fórmula Ponderada
+    const score = (esgScore * esgWeight) + (financialScore * (1 - esgWeight));
+    return Math.round(score);
+  };
+
   const holdings = useMemo(() => {
     const map = new Map<string, { qty: number; totalCost: number }>();
     transactions.forEach((t) => {
@@ -124,8 +139,15 @@ export default function App() {
       if (value.qty > 0.00001 || (value.totalCost > 0 && ticker === "FIXED")) {
         let stock = knownStocks.find((s) => s.ticker === ticker);
         const isFixedIncome = stock?.assetType === 'fixed_income' || ticker.includes("CDB") || ticker.includes("TESOURO");
+        
         const currentPrice = stock ? stock.price : (value.totalCost / (value.qty || 1));
         const totalValue = isFixedIncome ? value.totalCost : (value.qty * currentPrice);
+
+        const coherenceScore = calculateLivoScore(
+          stock || { change: 0 }, 
+          isFixedIncome ? 'fixed_income' : 'stock', 
+          userProfile.esgImportance
+        );
 
         result.push({
           ticker,
@@ -136,21 +158,24 @@ export default function App() {
           totalValue: totalValue,
           profit: totalValue - value.totalCost,
           profitPercent: value.totalCost > 0 ? ((totalValue - value.totalCost) / value.totalCost) * 100 : 0,
-          allocationPercent: 0
+          allocationPercent: 0,
+          // @ts-ignore
+          individualScore: coherenceScore 
         });
       }
     });
     return result;
-  }, [transactions, knownStocks]);
+  }, [transactions, knownStocks, userProfile.esgImportance]);
 
+  // Ranking ESG (Explorar)
   const rankedStocks = useMemo(() => {
     return knownStocks.map((stock) => {
-      const esgWeight = userProfile.esgImportance;
-      const score = (stock.esgScore || 50) * esgWeight + (stock.financialScore || 50) * (1 - esgWeight);
-      return { ...stock, coherenceScore: Math.round(score) };
+      const score = calculateLivoScore(stock, stock.assetType, userProfile.esgImportance);
+      return { ...stock, coherenceScore: score };
     }).sort((a, b) => b.coherenceScore - a.coherenceScore);
   }, [userProfile, knownStocks]);
 
+  // Lista da Aba Mercado
   const displayedStocks = useMemo(() => {
     const enriched = marketStocks.map(stock => {
       const b3Data = esgMap[stock.ticker] || { score: 10, badges: [] };
@@ -161,7 +186,6 @@ export default function App() {
     return enriched.filter(stock => !filterEsgOnly || stock.score >= 50);
   }, [marketStocks, filterEsgOnly, esgMap]);
 
-  // Mantém a correção do assetType aqui
   const handleAddTransaction = (t: Omit<Transaction, "id">, extraStockData?: any) => {
     const updated = [...transactions, { ...t, id: Math.random().toString(36).substr(2, 9) }];
     setTransactions(updated);
