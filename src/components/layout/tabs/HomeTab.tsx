@@ -18,7 +18,9 @@ import {
   Zap,
   Sparkles,
   LayoutDashboard,
-  BarChart3
+  BarChart3,
+  Info,
+  X
 } from "lucide-react";
 
 import { Holding } from "../../../types";
@@ -112,6 +114,9 @@ const HomeTab: React.FC<any> = ({
   ]);
   const [loadingNews, setLoadingNews] = useState(true);
 
+  // --- NOVO STATE: INFO BOX DA NOTA LIVO ---
+  const [isLivoInfoOpen, setIsLivoInfoOpen] = useState(false);
+
   useEffect(() => {
     async function fetchNews() {
       try {
@@ -147,24 +152,22 @@ const HomeTab: React.FC<any> = ({
     if (totalBalance === 0) return 0;
     let weightedScoreSum = 0;
     holdings.forEach((h: Holding) => {
-      const stockRank = rankedStocks.find((r: any) => r.ticker === h.ticker);
-      const score = stockRank ? stockRank.coherenceScore : 50;
-      weightedScoreSum += score * h.totalValue;
+      // @ts-ignore
+      const itemScore = h.individualScore || 50; // Usa a nota individual calculada no App.tsx
+      weightedScoreSum += itemScore * h.totalValue;
     });
     return Math.round(weightedScoreSum / totalBalance);
-  }, [holdings, rankedStocks, totalBalance]);
+  }, [holdings, totalBalance]);
 
   const coherenceStatus = getCoherenceStatus(coherenceScore);
 
   /* =======================
-     REBALANCEAMENTO (Lógica Atualizada Livo + Personalizado)
+     REBALANCEAMENTO
   ======================= */
   const rebalancingStrategy = useMemo(() => {
-    // 1. Definição das Metas (Targets) em Decimal
-    let target = { fixed_income: 0.4, fii: 0.3, stock: 0.3 }; // Default (Moderado)
+    let target = { fixed_income: 0.4, fii: 0.3, stock: 0.3 };
 
     if (userProfile.riskProfile === "Personalizado" && userProfile.customTargets) {
-      // CONVERSÃO IMPORTANTE: O modal salva 0-100, aqui usamos 0.0-1.0
       target = {
         fixed_income: userProfile.customTargets.fixed_income / 100,
         fii: userProfile.customTargets.fii / 100,
@@ -172,11 +175,9 @@ const HomeTab: React.FC<any> = ({
       };
     } 
     else if (userProfile.riskProfile === "Conservador") {
-      // Conservador: 80% RF, 15% FII, 5% Ações (Foco total em segurança)
       target = { fixed_income: 0.8, fii: 0.15, stock: 0.05 };
     } 
     else if (userProfile.riskProfile === "Arrojado") {
-      // Arrojado: 20% RF, 35% FII, 45% Ações (Foco em crescimento)
       target = { fixed_income: 0.2, fii: 0.35, stock: 0.45 };
     }
 
@@ -210,7 +211,6 @@ const HomeTab: React.FC<any> = ({
       {/* 1. SE CARTEIRA VAZIA: MOSTRA BOX DE "START" */}
       {totalBalance === 0 ? (
         <div className="bg-white rounded-3xl p-8 border border-emerald-100 shadow-sm relative overflow-hidden">
-           {/* Decorative BG */}
            <div className="absolute top-0 right-0 -mt-4 -mr-4 bg-emerald-50 rounded-full w-32 h-32 blur-2xl opacity-50"></div>
 
            <div className="relative z-10">
@@ -277,35 +277,61 @@ const HomeTab: React.FC<any> = ({
         </div>
       )}
 
-      {/* 2. IA (APENAS SE TIVER SALDO) */}
+      {/* 2. IA (APENAS SE TIVER SALDO) - MANTIDO INTACTO */}
       {totalBalance > 0 && <IA carteira={holdings} />}
 
-      {/* 3. JARDIM CONSCIENTE (APENAS SE TIVER SALDO) */}
+      {/* 3. NOTA LIVO DA CARTEIRA (ALTERADO CONFORME PEDIDO) */}
       {totalBalance > 0 && (
-        <div className="bg-white rounded-3xl p-6 border border-gray-100 shadow-sm">
+        <div className="bg-white rounded-3xl p-6 border border-gray-100 shadow-sm transition-all">
           <div className="flex justify-between items-start mb-4">
             <div>
               <h3 className="font-bold text-gray-900 text-lg flex items-center gap-2">
-                <Leaf className="text-emerald-600" size={20} />
-                Jardim Consciente
+                <ShieldCheck className="text-emerald-600" size={20} />
+                Nota Livo da Carteira
               </h3>
-              <p className="text-xs text-gray-500 mt-1">Alinhamento com seus valores ({userProfile.riskProfile})</p>
+              
+              <div className="flex items-center gap-2 mt-1">
+                <p className="text-xs text-gray-500">Alinhamento com seu perfil</p>
+                <button 
+                   onClick={() => setIsLivoInfoOpen(!isLivoInfoOpen)}
+                   className="text-gray-400 hover:text-emerald-600 transition-colors"
+                >
+                   <Info size={14} />
+                </button>
+              </div>
             </div>
+            
             <div className="flex flex-col items-end">
-              <span className="font-bold text-3xl text-gray-900">{coherenceScore}%</span>
+              <span className="font-bold text-3xl text-gray-900">{coherenceScore}</span>
             </div>
           </div>
+
+          {/* BOX DE INFO EXPANSÍVEL (NOVO) */}
+          {isLivoInfoOpen && (
+             <div className="mb-4 bg-emerald-50 rounded-xl p-4 border border-emerald-100 animate-in fade-in slide-in-from-top-2 relative">
+                <button 
+                  onClick={() => setIsLivoInfoOpen(false)}
+                  className="absolute top-2 right-2 text-emerald-700/50 hover:text-emerald-700"
+                >
+                  <X size={16} />
+                </button>
+                <p className="text-sm text-emerald-900 leading-relaxed font-medium">
+                  Este índice revela o nível de coerência dos seus investimentos. Calculamos uma média ponderada cruzando a <strong>Nota Livo</strong> de cada ativo (Financeiro + ESG) com a <strong>quantidade de dinheiro</strong> que você tem alocado neles. Quanto maior a nota, mais fiel sua carteira está aos seus objetivos de retorno e impacto.
+                </p>
+             </div>
+          )}
+
           <div className="relative h-4 bg-gray-100 rounded-full overflow-hidden mb-2">
             <div className={`absolute top-0 left-0 h-full ${coherenceStatus.color} transition-all duration-1000 ease-out`} style={{ width: `${coherenceScore}%` }} />
           </div>
           <div className="flex justify-between items-center text-xs font-medium">
-             <span className={`${coherenceStatus.textClass} font-bold`}>{coherenceStatus.text}</span>
-             <span className="text-gray-400">Meta: 100%</span>
+              <span className={`${coherenceStatus.textClass} font-bold`}>{coherenceStatus.text}</span>
+              <span className="text-gray-400">Meta: 100</span>
           </div>
         </div>
       )}
 
-      {/* 4. INSIGHTS + ESTRATÉGIA (SEMPRE VISÍVEL - ORIENTA O INICIANTE) */}
+      {/* 4. INSIGHTS + ESTRATÉGIA - MANTIDO INTACTO */}
       <div className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden">
         <div className="p-6 border-b border-gray-100 bg-gray-50/50">
           <div className="flex items-center gap-2 mb-2">
@@ -350,7 +376,7 @@ const HomeTab: React.FC<any> = ({
         </div>
       </div>
 
-      {/* 5. NOTÍCIAS (COM CAPA EM DESTAQUE) */}
+      {/* 5. NOTÍCIAS - MANTIDO INTACTO */}
       <div className="bg-white rounded-3xl p-6 border border-gray-100 shadow-sm">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
@@ -362,7 +388,6 @@ const HomeTab: React.FC<any> = ({
           </span>
         </div>
 
-        {/* LOADING */}
         {loadingNews && (
           <div className="space-y-4 opacity-50">
              <div className="h-32 bg-gray-100 rounded-2xl animate-pulse"></div>
@@ -373,11 +398,9 @@ const HomeTab: React.FC<any> = ({
           </div>
         )}
 
-        {/* CONTEÚDO REAL */}
         {!loadingNews && realNews.length > 0 && (
           <div className="flex flex-col gap-4">
             
-            {/* 1. MANCHETE DO DIA (CAPA) */}
             {realNews[0] && (
               <a 
                 href={realNews[0].url} 
@@ -385,7 +408,6 @@ const HomeTab: React.FC<any> = ({
                 rel="noreferrer"
                 className="group relative block bg-gray-900 rounded-2xl p-6 text-white overflow-hidden shadow-lg hover:shadow-xl transition-all hover:scale-[1.01]"
               >
-                {/* Efeito de brilho no fundo */}
                 <div className="absolute top-0 right-0 p-8 bg-emerald-500/20 blur-3xl rounded-full pointer-events-none transform translate-x-1/2 -translate-y-1/2"></div>
                 
                 <div className="relative z-10">
@@ -407,7 +429,6 @@ const HomeTab: React.FC<any> = ({
               </a>
             )}
 
-            {/* LISTA DE OUTRAS NOTÍCIAS */}
             <div className="grid gap-3">
               {realNews.slice(1).map((news, idx) => (
                 <a
@@ -435,7 +456,6 @@ const HomeTab: React.FC<any> = ({
                   <div className="flex justify-between items-center mt-3 text-[10px] uppercase font-bold tracking-wider">
                     <span className="text-gray-400">{news.source}</span>
                     
-                    {/* Badge Condicional */}
                     {news.type === 'esg' && (
                       <span className="flex items-center gap-1 text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-md">
                         <Leaf size={10} /> Destaque ESG
