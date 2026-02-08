@@ -34,7 +34,7 @@ const MethodologyModal: React.FC<Props> = ({ onClose }) => {
             <p className="text-sm bg-blue-50 p-3 rounded-lg border border-blue-100 text-blue-800 flex gap-2">
               <Info size={18} className="shrink-0 mt-0.5"/>
               <span>
-                <strong>Nova Fórmula:</strong> Nota = Base (50) + Selos B3 (Bônus) - Infrações (Penalidades).
+                <strong>Entenda a Fórmula:</strong> Nota = Base (50) + Selos B3 (Bônus) - Infrações (Penalidades).
               </span>
             </p>
           </div>
