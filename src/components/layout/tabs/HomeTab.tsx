@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import {
   ArrowUpRight,
   ArrowDownRight,
@@ -7,16 +7,25 @@ import {
   Leaf,
   AlertCircle,
   TrendingUp,
-  Info,
   ShieldCheck,
   Sparkles,
   Zap,
   Loader2,
   ExternalLink,
   Newspaper,
-  Globe
+  Globe,
+  ArrowRight
 } from "lucide-react";
 import { UserProfile, Transaction, Holding } from "../../../types";
+
+// Interface para as notícias que vêm da API
+interface NewsItem {
+  type: 'capa' | 'relevante' | 'esg';
+  title: string;
+  source: string;
+  impact: string;
+  url: string;
+}
 
 interface HomeTabProps {
   userProfile: UserProfile;
@@ -38,7 +47,7 @@ export default function HomeTab({
   rankedStocks,
 }: HomeTabProps) {
   
-  // 1. CÁLCULO DA NOTA PONDERADA
+  // --- 1. LÓGICA FINANCEIRA ---
   const totalPortfolioValue = holdings.reduce((acc, h) => acc + h.totalValue, 0);
   
   const portfolioScore = useMemo(() => {
@@ -80,17 +89,56 @@ export default function HomeTab({
   const profit = totalPortfolioValue - totalInvested;
   const profitPercent = totalInvested > 0 ? (profit / totalInvested) * 100 : 0;
 
-  // 2. ESTADOS DA IA (Apenas Análise)
+  // --- 2. IA ANALYTICS (BOTÃO SEPARADO) ---
   const [isGeneratingAi, setIsGeneratingAi] = useState(false);
   const [aiAnalysis, setAiAnalysis] = useState<string | null>(null);
 
   const handleGeneratePortfolioAnalysis = () => {
     setIsGeneratingAi(true);
+    // Simulação da IA da Carteira (Futuro: conectar com backend)
     setTimeout(() => {
       const topAsset = holdings.sort((a,b) => b.totalValue - a.totalValue)[0]?.ticker || "sua carteira";
       setAiAnalysis(`**Resumo Livo:** Sua carteira tem nota **${portfolioScore}** (${scoreLabel}).\n\nIdentificamos concentração em **${topAsset}**. O cenário atual favorece sua estratégia de longo prazo, mas fique atento à volatilidade de curto prazo.`);
       setIsGeneratingAi(false);
     }, 2000);
+  };
+
+  // --- 3. NOTÍCIAS REAIS (CONEXÃO COM API/NEWS.JS) ---
+  const [newsData, setNewsData] = useState<NewsItem[]>([]);
+  const [isLoadingNews, setIsLoadingNews] = useState(true);
+
+  useEffect(() => {
+    const fetchNews = async () => {
+      try {
+        const res = await fetch('/api/news');
+        const data = await res.json();
+        if (data.news && Array.isArray(data.news)) {
+          setNewsData(data.news);
+        }
+      } catch (error) {
+        console.error("Erro ao carregar notícias:", error);
+      } finally {
+        setIsLoadingNews(false);
+      }
+    };
+    fetchNews();
+  }, []);
+
+  // Filtra as notícias para os boxes
+  const capaNews = newsData.find(n => n.type === 'capa') || {
+    title: "Carregando destaques do mercado...",
+    source: "InfoMoney",
+    impact: "Aguarde um momento.",
+    url: "#",
+    type: 'capa'
+  };
+
+  const esgNews = newsData.find(n => n.type === 'esg') || {
+    title: "Buscando destaques sustentáveis...",
+    source: "Livo ESG",
+    impact: "Analisando impacto.",
+    url: "#",
+    type: 'esg'
   };
 
   return (
@@ -136,7 +184,7 @@ export default function HomeTab({
         </div>
       </div>
 
-      {/* 2. NOTA LIVO (NOVA) */}
+      {/* 2. NOTA LIVO */}
       <div className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100 relative overflow-hidden">
         <div className={`absolute top-0 right-0 w-32 h-32 ${scoreBg} rounded-bl-full opacity-50 pointer-events-none`} />
         <div className="relative z-10">
@@ -167,7 +215,7 @@ export default function HomeTab({
         </div>
       </div>
 
-      {/* 3. LIVO INTELLIGENCE (BOTÃO DE ANÁLISE SEPARADO) */}
+      {/* 3. LIVO INTELLIGENCE (BOTÃO ISOLADO) */}
       <div className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100">
         <div className="flex items-center justify-between mb-4">
            <h3 className="text-lg font-bold flex items-center gap-2 text-gray-900">
@@ -208,7 +256,7 @@ export default function HomeTab({
         )}
       </div>
 
-      {/* 4. NOTÍCIAS (AREA SEPARADA - DESTAQUES) */}
+      {/* 4. GIRO DO MERCADO (REAL-TIME VIA API) */}
       <div>
          <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2 mb-4 px-2">
            <Globe size={20} className="text-gray-400" />
@@ -216,41 +264,55 @@ export default function HomeTab({
          </h3>
          
          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-           {/* BOX 1: INFOMONEY / MERCADO */}
-           <div className="bg-white p-5 rounded-3xl shadow-sm border border-gray-100 hover:border-blue-200 transition-colors group cursor-pointer">
+           {/* BOX 1: DESTAQUE DO DIA (CAPA) */}
+           <a 
+             href={capaNews.url} 
+             target="_blank" 
+             rel="noopener noreferrer"
+             className={`bg-white p-5 rounded-3xl shadow-sm border border-gray-100 hover:border-blue-300 transition-all group block relative ${isLoadingNews ? 'animate-pulse' : ''}`}
+           >
               <div className="flex justify-between items-start mb-3">
                  <div className="p-2 bg-blue-50 text-blue-600 rounded-lg">
                     <Newspaper size={20} />
                  </div>
                  <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Destaque do Dia</span>
               </div>
-              <h4 className="font-bold text-gray-900 leading-tight mb-2 group-hover:text-blue-700 transition-colors">
-                 Ibovespa fecha em alta impulsionado por Vale e Petrobras; Dólar cai a R$ 5,75
+              <h4 className="font-bold text-gray-900 leading-tight mb-2 group-hover:text-blue-700 transition-colors line-clamp-3">
+                 {capaNews.title}
               </h4>
-              <div className="flex items-center gap-2 text-xs text-gray-500">
-                 <span className="font-bold text-blue-600">InfoMoney</span>
-                 <span>•</span>
-                 <span>15 min atrás</span>
+              <p className="text-xs text-gray-500 mb-3 line-clamp-2">
+                 {capaNews.impact}
+              </p>
+              <div className="flex items-center justify-between text-xs text-gray-400">
+                 <span className="font-bold text-blue-600">{capaNews.source}</span>
+                 <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform text-blue-400"/>
               </div>
-           </div>
+           </a>
 
-           {/* BOX 2: DESTAQUE ESG */}
-           <div className="bg-white p-5 rounded-3xl shadow-sm border border-gray-100 hover:border-emerald-200 transition-colors group cursor-pointer">
+           {/* BOX 2: DESTAQUE ESG (VERDE) */}
+           <a 
+             href={esgNews.url} 
+             target="_blank" 
+             rel="noopener noreferrer"
+             className={`bg-white p-5 rounded-3xl shadow-sm border border-gray-100 hover:border-emerald-300 transition-all group block relative ${isLoadingNews ? 'animate-pulse' : ''}`}
+           >
               <div className="flex justify-between items-start mb-3">
                  <div className="p-2 bg-emerald-50 text-emerald-600 rounded-lg">
                     <Leaf size={20} />
                  </div>
                  <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Destaque ESG</span>
               </div>
-              <h4 className="font-bold text-gray-900 leading-tight mb-2 group-hover:text-emerald-700 transition-colors">
-                 WEG (WEGE3) anuncia novo plano de neutralidade de carbono até 2030
+              <h4 className="font-bold text-gray-900 leading-tight mb-2 group-hover:text-emerald-700 transition-colors line-clamp-3">
+                 {esgNews.title}
               </h4>
-              <div className="flex items-center gap-2 text-xs text-gray-500">
-                 <span className="font-bold text-emerald-600">Exame ESG</span>
-                 <span>•</span>
-                 <span>2h atrás</span>
+               <p className="text-xs text-gray-500 mb-3 line-clamp-2">
+                 {esgNews.impact}
+              </p>
+              <div className="flex items-center justify-between text-xs text-gray-400">
+                 <span className="font-bold text-emerald-600">{esgNews.source}</span>
+                 <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform text-emerald-400"/>
               </div>
-           </div>
+           </a>
          </div>
       </div>
 
