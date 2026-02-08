@@ -5,11 +5,11 @@
     <link rel="icon" href="%PUBLIC_URL%/favicon.ico" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     
-    <meta name="theme-color" content="#059669" />
+    <meta name="theme-color" content="#236C3F" />
     
     <meta
       name="description"
-      content="Livo - Guia para investir com responsabilidade e consciência. Seu dinheiro, alinhado à sua vida."
+      content="Livo - Descubra a nota da sua carteira e invista com consciência."
     />
     <link rel="apple-touch-icon" href="%PUBLIC_URL%/logo192.png" />
     
@@ -19,6 +19,48 @@
 
     <script src="https://cdn.tailwindcss.com"></script>
     
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              // --- PALETA LIVO OFICIAL ---
+              emerald: {
+                50: '#F5F9F4',
+                100: '#E4F0DE',
+                200: '#C1DBB3', // Verde Claro (Selos)
+                300: '#9FCBA0',
+                400: '#7EBC89', // Verde Médio (Gráficos)
+                500: '#509464',
+                600: '#236C3F', // Verde Escuro (Botão Principal)
+                700: '#1C5632',
+                800: '#154126',
+                900: '#0E2B19',
+              },
+              red: {
+                // Substituímos o vermelho padrão pelo Laranja Livo (Para botões de Venda/Atenção)
+                50: '#FEF6F4',
+                100: '#FDEBE8',
+                200: '#FAD2C9',
+                300: '#F69065', // Laranja Suave
+                400: '#F27D60',
+                500: '#ED6B5A', // Laranja Forte (Venda)
+                600: '#D65A4A',
+                700: '#B04639',
+                800: '#8A352B',
+                900: '#64251E',
+              },
+              // Mapeamos o orange também para garantir
+              orange: {
+                300: '#F69065',
+                500: '#ED6B5A',
+              }
+            }
+          }
+        }
+      }
+    </script>
+    
     <style>
       body {
         font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
@@ -26,12 +68,12 @@
           sans-serif;
         -webkit-font-smoothing: antialiased;
         -moz-osx-font-smoothing: grayscale;
-        background-color: #F9FAFB; /* Gray-50 */
+        background-color: #F9FAFB;
       }
     </style>
   </head>
   <body>
     <noscript>A Livo precisa do JavaScript ativado para funcionar.</noscript>
     <div id="root"></div>
-    </body>
+  </body>
 </html>
