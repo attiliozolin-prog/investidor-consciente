@@ -306,7 +306,7 @@ const HomeTab: React.FC<any> = ({
             </div>
           </div>
 
-          {/* BOX DE INFO EXPANSÍVEL (NOVO) */}
+         {/* BOX DE INFO EXPANSÍVEL (ATUALIZADO) */}
           {isLivoInfoOpen && (
              <div className="mb-4 bg-emerald-50 rounded-xl p-4 border border-emerald-100 animate-in fade-in slide-in-from-top-2 relative">
                 <button 
@@ -316,7 +316,7 @@ const HomeTab: React.FC<any> = ({
                   <X size={16} />
                 </button>
                 <p className="text-sm text-emerald-900 leading-relaxed font-medium">
-                  Este índice revela o nível de coerência dos seus investimentos. Calculamos uma média ponderada cruzando a <strong>Nota Livo</strong> de cada ativo (Financeiro + ESG) com a <strong>quantidade de dinheiro</strong> que você tem alocado neles. Quanto maior a nota, mais fiel sua carteira está aos seus objetivos de retorno e impacto.
+                  Este índice revela a <strong>integridade média</strong> da sua carteira. Calculamos uma média ponderada cruzando a <strong>Nota Livo</strong> de cada ativo (Baseada em selos de sustentabilidade e histórico de conduta) com o <strong>volume financeiro</strong> que você tem alocado neles. Quanto maior a nota, mais responsável é a sua exposição.
                 </p>
              </div>
           )}
