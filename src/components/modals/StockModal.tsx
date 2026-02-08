@@ -1,18 +1,8 @@
 import React, { useState } from "react";
-import { X, ExternalLink, Leaf, AlertTriangle, CheckCircle2, Sparkles, Loader2, Info, ShieldAlert, TrendingUp } from "lucide-react";
+import { X, ExternalLink, Leaf, AlertTriangle, CheckCircle2, Sparkles, Loader2, Info, ShieldAlert, TrendingUp, Scale } from "lucide-react";
 import { UserProfile } from "../../types";
 
-// --- DICIONÁRIO DE SELOS (MANTIDO) ---
-const BADGE_DEFINITIONS: Record<string, string> = {
-  "ISE": "Índice de Sustentabilidade Empresarial: Padrão ouro em ESG.",
-  "ICO2": "Índice Carbono Eficiente: Compromisso com emissões.",
-  "IGPTW": "Melhores empresas para se trabalhar (GPTW).",
-  "IDIVERSA": "Destaque em diversidade de gênero e raça.",
-  "IGCT": "Governança Corporativa de alto padrão.",
-  "ALERTA": "Pontos de atenção identificados pela Livo."
-};
-
-// --- COMPONENTE DE LOGO (MANTIDO) ---
+// --- COMPONENTE DE LOGO ---
 const ModalStockLogo = ({ ticker, logoUrl, size = "lg" }: { ticker: string, logoUrl?: string, size?: "sm" | "md" | "lg" }) => {
   const [errorCount, setErrorCount] = useState(0);
   const sources = [
@@ -38,7 +28,7 @@ const ModalStockLogo = ({ ticker, logoUrl, size = "lg" }: { ticker: string, logo
   );
 };
 
-// --- FORMATADOR MARKDOWN (MANTIDO) ---
+// --- FORMATADOR MARKDOWN ---
 const renderMarkdown = (text: string) => {
   if (!text) return null;
   return text.split('\n').map((line, index) => {
@@ -70,10 +60,10 @@ const StockModal: React.FC<StockModalProps> = ({ stock, user, coherenceScore, on
     scoreColor = "bg-emerald-50 text-emerald-700 border-emerald-100";
     scoreIcon = <CheckCircle2 size={20} />;
     scoreText = `Excelente alinhamento (Nota Livo: ${coherenceScore}).`;
-  } else if (coherenceScore >= 50) {
-    scoreColor = "bg-yellow-50 text-yellow-700 border-yellow-100";
-    scoreIcon = <Info size={20} />; 
-    scoreText = `Alinhamento mediano (Nota Livo: ${coherenceScore}).`;
+  } else if (coherenceScore >= 45) { // Ajustado para incluir 50 (Neutro)
+    scoreColor = "bg-blue-50 text-blue-700 border-blue-100";
+    scoreIcon = <Scale size={20} />; 
+    scoreText = `Alinhamento neutro/base (Nota Livo: ${coherenceScore}).`;
   } else {
     scoreColor = "bg-red-50 text-red-700 border-red-100";
     scoreIcon = <AlertTriangle size={20} />;
@@ -134,7 +124,7 @@ const StockModal: React.FC<StockModalProps> = ({ stock, user, coherenceScore, on
             </div>
           </div>
 
-          {/* SEÇÃO: EVIDÊNCIAS (NOVA LÓGICA DE BÔNUS E PENALIDADES) */}
+          {/* SEÇÃO: EVIDÊNCIAS E FATORES DE IMPACTO */}
           <div>
             <h4 className="text-sm font-bold text-gray-900 mb-3 flex items-center gap-2">
               <ShieldAlert size={16} className="text-gray-400"/> Fatores de Impacto
@@ -143,7 +133,6 @@ const StockModal: React.FC<StockModalProps> = ({ stock, user, coherenceScore, on
             {stock.evidence_log && stock.evidence_log.length > 0 ? (
               <div className="space-y-2">
                 {stock.evidence_log.map((log: any, idx: number) => {
-                  // Define estilo baseado no tipo de evidência (Bônus, Penalidade ou Base)
                   let itemColor = "bg-gray-50 border-gray-100";
                   let itemIcon = <Info size={16} className="text-gray-400" />;
                   let itemValueColor = "text-gray-500";
@@ -156,6 +145,10 @@ const StockModal: React.FC<StockModalProps> = ({ stock, user, coherenceScore, on
                     itemColor = "bg-red-50 border-red-100";
                     itemIcon = <AlertTriangle size={16} className="text-red-600" />;
                     itemValueColor = "text-red-600";
+                  } else if (log.type === 'BASE') {
+                    itemColor = "bg-blue-50/50 border-blue-100";
+                    itemIcon = <Scale size={16} className="text-blue-500" />;
+                    itemValueColor = "text-blue-600";
                   }
 
                   return (
@@ -175,19 +168,19 @@ const StockModal: React.FC<StockModalProps> = ({ stock, user, coherenceScore, on
                 })}
               </div>
             ) : (
-              // Fallback para empresas sem dados detalhados (Usa tags antigas se existirem)
-              <div className="space-y-2">
-                 {stock.tags && stock.tags.map((tag: string) => (
-                    <div key={tag} className="flex items-center gap-3 p-3 rounded-xl border border-gray-100 bg-gray-50">
-                      <Leaf size={16} className="text-emerald-500" />
-                      <span className="text-sm font-bold text-gray-700">{tag}</span>
-                    </div>
-                 ))}
-                 {!stock.tags?.length && (
-                   <div className="p-4 bg-gray-50 rounded-xl border border-dashed border-gray-200 text-center">
-                     <p className="text-xs text-gray-400">Sem dados detalhados de impacto para este ativo.</p>
-                   </div>
-                 )}
+              // --- CARD DE NOTA NEUTRA (QUANDO NÃO HÁ DADOS) ---
+              <div className="p-4 bg-blue-50 rounded-xl border border-blue-100">
+                <div className="flex items-start gap-3">
+                  <Info size={18} className="text-blue-600 shrink-0 mt-0.5" />
+                  <div>
+                    <h5 className="font-bold text-blue-900 text-sm mb-1">Nota Neutra (Base 50)</h5>
+                    <p className="text-xs text-blue-800 leading-relaxed">
+                      Esta empresa não consta nos índices de sustentabilidade monitorados (Bônus), mas também não possui penalidades graves registradas em nosso banco de dados.
+                      <br/><br/>
+                      Por isso, ela parte da <strong>Nota Base de 50 pontos</strong>, indicando conformidade padrão com as regras de mercado.
+                    </p>
+                  </div>
+                </div>
               </div>
             )}
           </div>
