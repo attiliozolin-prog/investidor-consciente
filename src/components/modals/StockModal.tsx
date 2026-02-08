@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { X, ExternalLink, Leaf, AlertTriangle, CheckCircle2, Sparkles, Loader2, Info, ShieldAlert, TrendingUp, Scale } from "lucide-react";
+import { X, ExternalLink, Leaf, AlertTriangle, CheckCircle2, Sparkles, Loader2, Info, ShieldAlert, TrendingUp, Scale, HelpCircle } from "lucide-react";
 import { UserProfile } from "../../types";
 
 // --- COMPONENTE DE LOGO ---
@@ -51,20 +51,27 @@ const StockModal: React.FC<StockModalProps> = ({ stock, user, coherenceScore, on
   const [isLoadingAi, setIsLoadingAi] = useState(false);
   const [aiError, setAiError] = useState(false);
 
-  // --- LÓGICA DE COR DA NOTA ---
+  // --- LÓGICA DE COR E TEXTO DA NOTA ---
   let scoreColor = "bg-gray-100 text-gray-800";
-  let scoreIcon = <CheckCircle2 size={20} />;
+  let scoreIcon = <Scale size={20} />;
   let scoreText = "Análise neutra.";
+
+  // Verifica se é estritamente neutro (50 e apenas 1 evidência de base)
+  const isStrictlyNeutral = coherenceScore === 50 && (!stock.evidence_log || stock.evidence_log.length <= 1);
 
   if (coherenceScore >= 70) {
     scoreColor = "bg-emerald-50 text-emerald-700 border-emerald-100";
-    scoreIcon = <CheckCircle2 size={20} />;
+    scoreIcon = <Leaf size={20} />;
     scoreText = `Excelente alinhamento (Nota Livo: ${coherenceScore}).`;
-  } else if (coherenceScore >= 45) { // Ajustado para incluir 50 (Neutro)
+  } else if (coherenceScore > 50) {
     scoreColor = "bg-blue-50 text-blue-700 border-blue-100";
-    scoreIcon = <Scale size={20} />; 
-    scoreText = `Alinhamento neutro/base (Nota Livo: ${coherenceScore}).`;
-  } else {
+    scoreIcon = <CheckCircle2 size={20} />; 
+    scoreText = `Bom alinhamento (Nota Livo: ${coherenceScore}).`;
+  } else if (isStrictlyNeutral) {
+    scoreColor = "bg-gray-50 text-gray-700 border-gray-200";
+    scoreIcon = <Scale size={20} />;
+    scoreText = `Alinhamento padrão/neutro (Nota Livo: 50).`;
+  } else if (coherenceScore < 50) {
     scoreColor = "bg-red-50 text-red-700 border-red-100";
     scoreIcon = <AlertTriangle size={20} />;
     scoreText = `Baixo alinhamento (Nota Livo: ${coherenceScore}).`;
@@ -124,13 +131,14 @@ const StockModal: React.FC<StockModalProps> = ({ stock, user, coherenceScore, on
             </div>
           </div>
 
-          {/* SEÇÃO: EVIDÊNCIAS E FATORES DE IMPACTO */}
+          {/* SEÇÃO: EVIDÊNCIAS */}
           <div>
             <h4 className="text-sm font-bold text-gray-900 mb-3 flex items-center gap-2">
               <ShieldAlert size={16} className="text-gray-400"/> Fatores de Impacto
             </h4>
             
-            {stock.evidence_log && stock.evidence_log.length > 0 ? (
+            {/* Lógica para mostrar lista OU card de neutro */}
+            {!isStrictlyNeutral && stock.evidence_log && stock.evidence_log.length > 0 ? (
               <div className="space-y-2">
                 {stock.evidence_log.map((log: any, idx: number) => {
                   let itemColor = "bg-gray-50 border-gray-100";
@@ -168,16 +176,16 @@ const StockModal: React.FC<StockModalProps> = ({ stock, user, coherenceScore, on
                 })}
               </div>
             ) : (
-              // --- CARD DE NOTA NEUTRA (QUANDO NÃO HÁ DADOS) ---
-              <div className="p-4 bg-blue-50 rounded-xl border border-blue-100">
+              // --- CARD DE NOTA NEUTRA (TEXTO ESPECÍFICO) ---
+              <div className="p-5 bg-gray-50 rounded-2xl border border-gray-200">
                 <div className="flex items-start gap-3">
-                  <Info size={18} className="text-blue-600 shrink-0 mt-0.5" />
+                  <HelpCircle size={20} className="text-gray-400 shrink-0 mt-0.5" />
                   <div>
-                    <h5 className="font-bold text-blue-900 text-sm mb-1">Nota Neutra (Base 50)</h5>
-                    <p className="text-xs text-blue-800 leading-relaxed">
-                      Esta empresa não consta nos índices de sustentabilidade monitorados (Bônus), mas também não possui penalidades graves registradas em nosso banco de dados.
+                    <h5 className="font-bold text-gray-900 text-sm mb-1">Por que a nota é 50?</h5>
+                    <p className="text-sm text-gray-600 leading-relaxed">
+                      Esta empresa não consta nos índices de sustentabilidade monitorados (Bônus), mas também <strong>não possui penalidades graves</strong> (ambientais ou econômicas) registradas em nosso banco de dados.
                       <br/><br/>
-                      Por isso, ela parte da <strong>Nota Base de 50 pontos</strong>, indicando conformidade padrão com as regras de mercado.
+                      Por isso, ela recebe a <strong>Nota Base de 50 pontos</strong>, indicando conformidade padrão com as regras do mercado.
                     </p>
                   </div>
                 </div>
