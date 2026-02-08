@@ -7,7 +7,8 @@ import {
   Leaf,
   AlertCircle,
   TrendingUp,
-  Info
+  Info,
+  ShieldCheck // <--- Adicionado aqui
 } from "lucide-react";
 import { UserProfile, Transaction, Holding } from "../../../types";
 
