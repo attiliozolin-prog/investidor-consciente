@@ -7,7 +7,8 @@ import {
   Leaf,
   Loader2,
   ShieldCheck,
-  Info
+  Info,
+  AlertCircle
 } from "lucide-react";
 
 import Onboarding from "./components/onboarding";
@@ -84,30 +85,52 @@ export default function App() {
   const [isLoadingMarket, setIsLoadingMarket] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [filterEsgOnly, setFilterEsgOnly] = useState(false);
+  const [searchError, setSearchError] = useState(false);
 
   const [esgMap, setEsgMap] = useState<Record<string, EsgScoreData>>({});
   const [isEsgMapLoaded, setIsEsgMapLoaded] = useState(false);
 
+  // Carrega os Scores ESG ao iniciar
   useEffect(() => {
-    MarketService.getEsgScores().then(map => { setEsgMap(map); setIsEsgMapLoaded(true); });
+    MarketService.getEsgScores()
+      .then(map => { 
+        setEsgMap(map); 
+        setIsEsgMapLoaded(true); 
+      })
+      .catch(err => console.error("Erro carregando ESG Map:", err));
   }, []);
 
-  // --- CORREÇÃO DA BUSCA: MOSTRA PADRÃO SE VAZIO ---
+  // --- CORREÇÃO DA BUSCA (ANTI-CRASH) ---
   useEffect(() => {
     if (activeTab === "market") {
-      // Se a busca estiver vazia, restaura a lista padrão (knownStocks)
+      setSearchError(false);
+
+      // Se a busca estiver vazia, restaura a lista padrão e para
       if (searchTerm.trim() === "") {
         setMarketStocks(knownStocks);
+        setIsLoadingMarket(false);
         return;
       }
 
-      // Se tiver busca, chama a API
       const delayDebounceFn = setTimeout(() => {
         setIsLoadingMarket(true);
         MarketService.searchStocks(searchTerm)
-          .then(data => setMarketStocks(data))
+          .then(data => {
+            // Garante que é um array antes de setar o estado
+            if (Array.isArray(data) && data.length > 0) {
+              setMarketStocks(data);
+            } else {
+              setMarketStocks([]); // Lista vazia se não achar nada
+            }
+          })
+          .catch(err => {
+            console.error("Erro na busca:", err);
+            setSearchError(true);
+            setMarketStocks([]); // Evita quebrar o map com undefined
+          })
           .finally(() => setIsLoadingMarket(false));
-      }, 500);
+      }, 600); // Aumentei o debounce para evitar chamadas excessivas
+
       return () => clearTimeout(delayDebounceFn);
     }
   }, [activeTab, searchTerm, knownStocks]);
@@ -116,8 +139,10 @@ export default function App() {
   const calculateLivoScore = (stock: any, assetType: string, esgWeight: number) => {
     if (assetType === 'fixed_income') return 60;
 
-    // Score ESG Base 50
-    const esgScore = stock.esgScore || 50;
+    // Normaliza o ticker para buscar no mapa (Remove .SA se existir)
+    const cleanTicker = (stock.ticker || "").replace('.SA', '').trim().toUpperCase();
+    const esgData = esgMap[cleanTicker];
+    const esgScore = esgData ? esgData.score : 50;
 
     let financialScore = 60; 
     if (stock.change > 0) financialScore = 70;
@@ -149,7 +174,7 @@ export default function App() {
         const totalValue = isFixedIncome ? value.totalCost : (value.qty * currentPrice);
 
         const coherenceScore = calculateLivoScore(
-          stock || { change: 0 }, 
+          stock || { ticker: ticker, change: 0 }, 
           isFixedIncome ? 'fixed_income' : 'stock', 
           userProfile.esgImportance
         );
@@ -170,29 +195,39 @@ export default function App() {
       }
     });
     return result;
-  }, [transactions, knownStocks, userProfile.esgImportance]);
+  }, [transactions, knownStocks, userProfile.esgImportance, esgMap]); // Adicionado esgMap na dependência
 
-  // Ranking ESG (Explorar)
+  // Ranking ESG
   const rankedStocks = useMemo(() => {
     return knownStocks.map((stock) => {
       const score = calculateLivoScore(stock, stock.assetType, userProfile.esgImportance);
       return { ...stock, coherenceScore: score };
     }).sort((a, b) => b.coherenceScore - a.coherenceScore);
-  }, [userProfile, knownStocks]);
+  }, [userProfile, knownStocks, esgMap]);
 
-  // Lista da Aba Mercado
+  // --- LISTA DE MERCADO (CORREÇÃO WEGE3 + PROTEÇÃO DE CRASH) ---
   const displayedStocks = useMemo(() => {
+    if (!Array.isArray(marketStocks)) return []; // Proteção contra crash
+
     const enriched = marketStocks.map(stock => {
-      // Fallback Neutro (50)
-      const b3Data = esgMap[stock.ticker] || { score: 50, badges: [] };
+      // NORMALIZAÇÃO DE TICKER PARA DAR MATCH NO ESG
+      const rawTicker = stock.ticker || "";
+      const cleanTicker = rawTicker.replace('.SA', '').trim().toUpperCase();
       
-      let displayName = STOCK_NAMES_FIX[stock.ticker] || stock.name;
-      if (displayName.endsWith('.SA')) displayName = displayName.replace('.SA', '');
+      // Busca no mapa ESG (Tenta chave limpa e chave original)
+      const b3Data = esgMap[cleanTicker] || esgMap[rawTicker] || { score: 50, badges: [] };
       
-      // Evidence Log base se não vier da API
+      let displayName = STOCK_NAMES_FIX[cleanTicker] || stock.name || rawTicker;
+      
       const evidence = b3Data.evidence_log || (b3Data.score === 50 ? [{ type: 'BASE', desc: 'Nota Inicial Neutra', val: 50 }] : []);
 
-      return { ...stock, ...b3Data, evidence_log: evidence, name: displayName };
+      return { 
+        ...stock, 
+        ...b3Data, 
+        evidence_log: evidence, 
+        name: displayName,
+        score: b3Data.score // Força o score correto
+      };
     });
     return enriched.filter(stock => !filterEsgOnly || stock.score >= 50);
   }, [marketStocks, filterEsgOnly, esgMap]);
@@ -291,11 +326,19 @@ export default function App() {
             </div>
 
             <div className="space-y-3">
-              {displayedStocks.length === 0 && !isLoadingMarket && (
+              {/* Feedback de erro ou vazio */}
+              {!isLoadingMarket && searchError && (
+                 <div className="flex items-center gap-2 p-3 bg-red-50 text-red-600 rounded-xl text-sm justify-center">
+                   <AlertCircle size={16} /> Falha ao buscar. Tente novamente.
+                 </div>
+              )}
+
+              {displayedStocks.length === 0 && !isLoadingMarket && !searchError && (
                 <div className="text-center py-10">
                    <p className="text-gray-400 mb-2">Nenhum ativo encontrado.</p>
                 </div>
               )}
+
               {displayedStocks.map((stock) => (
                  <div key={stock.ticker} onClick={() => {
                       const fullStockData = { ...stock, coherenceScore: stock.score, tags: stock.badges };
