@@ -71,8 +71,8 @@ const STRATEGY_CONTENT = {
 };
 
 const getCoherenceStatus = (score: number) => {
-  if (score >= 80) return { color: "bg-emerald-500", text: "Excelente Equilíbrio", textClass: "text-emerald-700" };
-  if (score >= 50) return { color: "bg-yellow-500", text: "Equilíbrio Moderado", textClass: "text-yellow-700" };
+  if (score >= 80) return { color: "bg-emerald-500", text: "Excelente", textClass: "text-emerald-700" };
+  if (score >= 50) return { color: "bg-yellow-500", text: "Moderado", textClass: "text-yellow-700" };
   return { color: "bg-red-500", text: "Precisa de Atenção", textClass: "text-red-700" };
 };
 
