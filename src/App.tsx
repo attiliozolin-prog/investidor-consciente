@@ -7,7 +7,8 @@ import {
   Leaf,
   Loader2,
   ShieldCheck,
-  Info
+  Info,
+  AlertCircle
 } from "lucide-react";
 
 import Onboarding from "./components/onboarding";
@@ -36,6 +37,7 @@ const STOCK_NAMES_FIX: Record<string, string> = {
   "GOLL4": "Gol Linhas Aéreas", "OIBR3": "Oi S.A.", "CASH3": "Méliuz"
 };
 
+// --- COMPONENTE DE LOGO ---
 const StockLogo = ({ ticker, size = "md" }: { ticker: string, size?: "sm" | "md" | "lg" }) => {
   const [errorCount, setErrorCount] = useState(0);
   const sources = [
@@ -78,46 +80,76 @@ export default function App() {
   const [isCustomStrategyOpen, setIsCustomStrategyOpen] = useState(false);
   const [isMethodologyOpen, setIsMethodologyOpen] = useState(false);
 
-  const [marketStocks, setMarketStocks] = useState<any[]>([]);
+  // Inicializa com knownStocks para a tela não abrir vazia
+  const [marketStocks, setMarketStocks] = useState<any[]>(STOCKS_DB);
   const [isLoadingMarket, setIsLoadingMarket] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [filterEsgOnly, setFilterEsgOnly] = useState(false);
+  const [searchError, setSearchError] = useState(false);
 
   const [esgMap, setEsgMap] = useState<Record<string, EsgScoreData>>({});
   const [isEsgMapLoaded, setIsEsgMapLoaded] = useState(false);
 
+  // Carrega Mapa ESG ao iniciar
   useEffect(() => {
-    MarketService.getEsgScores().then(map => { setEsgMap(map); setIsEsgMapLoaded(true); });
+    MarketService.getEsgScores()
+      .then(map => { 
+        setEsgMap(map); 
+        setIsEsgMapLoaded(true); 
+      })
+      .catch(err => console.error("Erro ESG:", err));
   }, []);
 
+  // --- BUSCA BLINDADA (CORREÇÃO DE CRASH) ---
   useEffect(() => {
     if (activeTab === "market") {
+      setSearchError(false);
+      
+      // Se busca vazia, restaura lista padrão
+      if (searchTerm.trim() === "") {
+        setMarketStocks(knownStocks); 
+        setIsLoadingMarket(false);
+        return;
+      }
+
       const delayDebounceFn = setTimeout(() => {
         setIsLoadingMarket(true);
         MarketService.searchStocks(searchTerm)
-          .then(data => setMarketStocks(data))
+          .then(data => {
+             // Proteção: Garante que é array antes de salvar
+             if (Array.isArray(data) && data.length > 0) {
+               setMarketStocks(data);
+             } else {
+               setMarketStocks([]); // Array vazio em vez de null/undefined
+             }
+          })
+          .catch(err => {
+             console.error("Erro na busca:", err);
+             setSearchError(true);
+             setMarketStocks([]); // Evita tela branca
+          })
           .finally(() => setIsLoadingMarket(false));
-      }, 500);
+      }, 600);
       return () => clearTimeout(delayDebounceFn);
     }
-  }, [activeTab, searchTerm]);
+  }, [activeTab, searchTerm, knownStocks]);
 
-  // --- LÓGICA ATUALIZADA (ANTI-GREENWASHING) ---
+  // --- CÁLCULO DE NOTA (CORREÇÃO WEGE3) ---
   const calculateLivoScore = (stock: any, assetType: string, esgWeight: number) => {
-    // 1. Renda Fixa: Mantemos como porto seguro neutro-positivo (60)
     if (assetType === 'fixed_income') return 60;
 
-    // 2. Score ESG com PENALIDADE
-    // Se não tiver score (sem selo), assume 35 (Nota Baixa) em vez de 50 (Neutro).
-    // Isso impede que empresas "escuras" fiquem com nota alta só pelo lucro.
-    const esgScore = stock.esgScore || 35;
+    // Normalização: Remove .SA para achar a chave correta no mapa
+    const rawTicker = stock.ticker || "";
+    const cleanTicker = rawTicker.replace('.SA', '').trim().toUpperCase();
+    
+    // Busca nota no mapa ou usa 50 (Neutro)
+    const esgData = esgMap[cleanTicker] || esgMap[rawTicker];
+    const esgScore = esgData ? esgData.score : 50;
 
-    // 3. Score Financeiro (Baseado no Momento)
-    let financialScore = 60; // Base neutra
-    if (stock.change > 0) financialScore = 70; // Bonança
-    if (stock.change < 0) financialScore = 50; // Queda
+    let financialScore = 60; 
+    if (stock.change > 0) financialScore = 70;
+    if (stock.change < 0) financialScore = 50;
 
-    // Fórmula Ponderada
     const score = (esgScore * esgWeight) + (financialScore * (1 - esgWeight));
     return Math.round(score);
   };
@@ -144,7 +176,7 @@ export default function App() {
         const totalValue = isFixedIncome ? value.totalCost : (value.qty * currentPrice);
 
         const coherenceScore = calculateLivoScore(
-          stock || { change: 0 }, 
+          stock || { ticker, change: 0 }, 
           isFixedIncome ? 'fixed_income' : 'stock', 
           userProfile.esgImportance
         );
@@ -165,23 +197,41 @@ export default function App() {
       }
     });
     return result;
-  }, [transactions, knownStocks, userProfile.esgImportance]);
+  }, [transactions, knownStocks, userProfile.esgImportance, esgMap]);
 
-  // Ranking ESG (Explorar)
   const rankedStocks = useMemo(() => {
     return knownStocks.map((stock) => {
       const score = calculateLivoScore(stock, stock.assetType, userProfile.esgImportance);
       return { ...stock, coherenceScore: score };
     }).sort((a, b) => b.coherenceScore - a.coherenceScore);
-  }, [userProfile, knownStocks]);
+  }, [userProfile, knownStocks, esgMap]);
 
-  // Lista da Aba Mercado
+  // --- LISTA DE MERCADO (PROTEÇÃO CONTRA TELA BRANCA) ---
   const displayedStocks = useMemo(() => {
-    const enriched = marketStocks.map(stock => {
-      const b3Data = esgMap[stock.ticker] || { score: 10, badges: [] };
-      let displayName = STOCK_NAMES_FIX[stock.ticker] || stock.name;
+    // PROTEÇÃO: Se marketStocks for nulo/undefined, usa array vazio
+    const safeStocks = Array.isArray(marketStocks) ? marketStocks : [];
+    
+    const enriched = safeStocks.map(stock => {
+      const rawTicker = stock.ticker || "";
+      const cleanTicker = rawTicker.replace('.SA', '').trim().toUpperCase();
+      
+      // Busca ESG usando chave limpa (WEGE3) ou original (WEGE3.SA)
+      const b3Data = esgMap[cleanTicker] || esgMap[rawTicker] || { score: 50, badges: [] };
+      
+      let displayName = STOCK_NAMES_FIX[cleanTicker] || stock.name || rawTicker;
       if (displayName.endsWith('.SA')) displayName = displayName.replace('.SA', '');
-      return { ...stock, ...b3Data, name: displayName };
+      
+      // Evidence log
+      const evidence = b3Data.evidence_log || (b3Data.score === 50 ? [{ type: 'BASE', desc: 'Nota Inicial Neutra', val: 50 }] : []);
+
+      return { 
+        ...stock, 
+        ...b3Data, 
+        evidence_log: evidence, 
+        name: displayName,
+        // Força score vindo do mapa ou 50
+        score: b3Data.score 
+      };
     });
     return enriched.filter(stock => !filterEsgOnly || stock.score >= 50);
   }, [marketStocks, filterEsgOnly, esgMap]);
@@ -280,11 +330,19 @@ export default function App() {
             </div>
 
             <div className="space-y-3">
-              {displayedStocks.length === 0 && !isLoadingMarket && (
+              {/* Feedback de erro ou vazio */}
+              {!isLoadingMarket && searchError && (
+                 <div className="flex items-center gap-2 p-3 bg-red-50 text-red-600 rounded-xl text-sm justify-center">
+                   <AlertCircle size={16} /> Falha na conexão. Tente novamente.
+                 </div>
+              )}
+
+              {displayedStocks.length === 0 && !isLoadingMarket && !searchError && (
                 <div className="text-center py-10">
                    <p className="text-gray-400 mb-2">Nenhum ativo encontrado.</p>
                 </div>
               )}
+
               {displayedStocks.map((stock) => (
                  <div key={stock.ticker} onClick={() => {
                       const fullStockData = { ...stock, coherenceScore: stock.score, tags: stock.badges };
@@ -306,13 +364,13 @@ export default function App() {
                         </div>
                         <div className="text-right shrink-0">
                             <div className="font-bold text-gray-900">R$ {stock.price?.toFixed(2)}</div>
-                            <div className="text-xs font-bold text-emerald-600">{stock.score} pts</div>
+                            <div className={`text-xs font-bold ${stock.score >= 50 ? "text-emerald-600" : "text-gray-400"}`}>{stock.score} pts</div>
                         </div>
                     </div>
                  </div>
               ))}
             </div>
-            <div className="text-center text-[10px] text-gray-400 mt-4">Dados: Brapi. | Scores: B3.</div>
+            <div className="text-center text-[10px] text-gray-400 mt-4">Dados: Brapi. | Scores: B3 + Dossiê Livo.</div>
           </div>
         )}
       </main>
