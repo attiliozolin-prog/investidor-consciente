@@ -2,29 +2,35 @@ import React, { useState } from "react";
 import { X, ExternalLink, Leaf, AlertTriangle, CheckCircle2, Sparkles, Loader2, Info } from "lucide-react";
 import { UserProfile } from "../../types";
 
+// --- DICIONÁRIO SINCRONIZADO COM API/ESG-SCORING.JS ---
 const BADGE_DEFINITIONS: Record<string, string> = {
+  // 1. Selos ESG (Contam pontos na Nota Livo)
   "ISE": "Índice de Sustentabilidade Empresarial: Empresas com alto padrão de eficiência ESG.",
-  "ICO2": "Índice Carbono Eficiente: Empresas comprometidas com a redução de emissões de gases estufa.",
+  "ICO2": "Índice Carbono Eficiente: Empresas comprometidas com a redução de emissões.",
   "IGPTW": "Índice GPTW: As melhores empresas para se trabalhar (Great Place to Work).",
-  "IDIVERSA": "Índice de Diversidade: Destaque em diversidade de gênero e raça na liderança.",
-  "IBOV": "Ibovespa: As empresas mais importantes e negociadas do mercado brasileiro.",
+  "IDIVERSA": "Índice de Diversidade: Destaque em diversidade de gênero e raça.",
+  "IGCT": "Governança Corporativa (Trade): Empresas com padrões elevados de governança e liquidez.",
+  
+  // 2. Índices de Mercado (Informativos)
+  "IBOV": "Ibovespa: As empresas mais importantes e negociadas do mercado.",
   "IBrX": "Índice Brasil: As 100 ações mais negociadas da B3.",
   "SMLL": "Small Caps: Empresas de menor porte com alto potencial de crescimento.",
   "IDIV": "Dividendos: Empresas com histórico consistente de pagamento de proventos.",
-  "IFNC": "Financeiro: Empresas do setor de intermediação financeira.",
-  "IMOB": "Imobiliário: Empresas do setor de construção civil e exploração imobiliária.",
-  "UTIL": "Utilidade Pública: Energia, água e saneamento (Setor Perene).",
-  "MAT": "Materiais Básicos: Siderurgia, mineração e papel e celulose."
+  "IFNC": "Financeiro: Bancos, seguradoras e intermediários financeiros.",
+  "IMOB": "Imobiliário: Construtoras e exploração de imóveis.",
+  "UTIL": "Utilidade Pública: Energia elétrica, água e saneamento.",
+  "MAT": "Materiais Básicos: Siderurgia, mineração, papel e celulose."
 };
 
-// --- COMPONENTE DE LOGO (REVERTIDO) ---
-const ModalStockLogo = ({ ticker, size = "lg" }: { ticker: string, size?: "sm" | "md" | "lg" }) => {
+// --- COMPONENTE DE LOGO ---
+const ModalStockLogo = ({ ticker, logoUrl, size = "lg" }: { ticker: string, logoUrl?: string, size?: "sm" | "md" | "lg" }) => {
   const [errorCount, setErrorCount] = useState(0);
   
   const sources = [
+    logoUrl,
     `https://raw.githubusercontent.com/thecapybara/br-logos/main/logos/${ticker.toUpperCase()}.png`,
     `https://raw.githubusercontent.com/lbcosta/b3-logos/main/png/${ticker.toUpperCase()}.png`
-  ];
+  ].filter(Boolean) as string[];
 
   const sizeClasses = {
     sm: "w-8 h-8 text-[10px]",
@@ -52,6 +58,7 @@ const ModalStockLogo = ({ ticker, size = "lg" }: { ticker: string, size?: "sm" |
   );
 };
 
+// --- FORMATADOR DE TEXTO ---
 const renderMarkdown = (text: string) => {
   if (!text) return null;
   const lines = text.split('\n');
@@ -128,7 +135,8 @@ const StockModal: React.FC<StockModalProps> = ({ stock, user, coherenceScore, on
         {/* Header */}
         <div className="p-6 border-b border-gray-100 flex justify-between items-start bg-gray-50/50">
           <div className="flex items-center gap-4">
-            <ModalStockLogo ticker={stock.ticker} size="lg" />
+            <ModalStockLogo ticker={stock.ticker} logoUrl={stock.logo} size="lg" />
+            
             <div>
               <h2 className="text-2xl font-bold text-gray-900 leading-tight">{stock.ticker}</h2>
               <p className="text-sm text-gray-500 font-medium">{stock.name}</p>
@@ -172,7 +180,9 @@ const StockModal: React.FC<StockModalProps> = ({ stock, user, coherenceScore, on
                   <Sparkles size={16} className="text-purple-600" />
                   Livo Intelligence
                 </h3>
-                {aiSummary && <span className="text-[10px] text-gray-400 uppercase font-bold">Gerado por IA</span>}
+                {aiSummary && (
+                  <span className="text-[10px] text-gray-400 uppercase font-bold">Gerado por IA</span>
+                )}
              </div>
 
              {!aiSummary && !isLoadingAi && (
@@ -188,18 +198,18 @@ const StockModal: React.FC<StockModalProps> = ({ stock, user, coherenceScore, on
              {isLoadingAi && (
                <div className="p-6 rounded-xl bg-gray-50 border border-gray-100 flex flex-col items-center justify-center text-gray-400 gap-2">
                  <Loader2 size={24} className="animate-spin text-purple-500" />
-                 <span className="text-xs">Consultando Google News e gerando análise...</span>
+                 <span className="text-xs">Consultando dados e gerando análise...</span>
                </div>
              )}
              
              {aiError && (
                <div className="p-3 rounded-xl bg-red-50 text-red-600 text-xs text-center">
-                 Erro ao gerar resumo. Tente novamente mais tarde.
+                 Erro ao gerar resumo. Verifique se a chave API está configurada.
                </div>
              )}
 
              {aiSummary && (
-               <div className="p-4 rounded-xl bg-white border border-purple-100 shadow-sm text-sm animate-in fade-in">
+               <div className="p-4 rounded-xl bg-white border border-purple-100 shadow-sm text-sm text-gray-700 leading-relaxed whitespace-pre-line animate-in fade-in">
                  {renderMarkdown(aiSummary)}
                </div>
              )}
@@ -207,7 +217,7 @@ const StockModal: React.FC<StockModalProps> = ({ stock, user, coherenceScore, on
 
           <hr className="border-gray-100" />
 
-          {/* Selos */}
+          {/* Selos (AGORA SINCRONIZADOS COM A API) */}
           <div>
             <h4 className="text-sm font-bold text-gray-900 mb-3 flex items-center gap-2">
               <Leaf size={16} className="text-emerald-600"/> Índices e Selos B3
@@ -216,7 +226,9 @@ const StockModal: React.FC<StockModalProps> = ({ stock, user, coherenceScore, on
             {stock.tags && stock.tags.length > 0 ? (
               <div className="space-y-2">
                 {stock.tags.map((tag: string) => {
+                  // Fallback para caso venha uma tag nova da B3 que não mapeamos
                   const definition = BADGE_DEFINITIONS[tag] || "Índice oficial reconhecido pela B3 e mercado financeiro.";
+                  
                   return (
                     <div key={tag} className="flex items-center gap-3 p-3 rounded-xl border border-gray-100 bg-gray-50 group hover:border-emerald-200 transition-colors cursor-help">
                       <div className="w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600 shrink-0">
