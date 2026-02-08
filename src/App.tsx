@@ -37,14 +37,10 @@ const STOCK_NAMES_FIX: Record<string, string> = {
   "GOLL4": "Gol Linhas Aéreas", "OIBR3": "Oi S.A.", "CASH3": "Méliuz"
 };
 
-// --- COMPONENTE DE LOGO BLINDADO ---
+// --- COMPONENTE DE LOGO ---
 const StockLogo = ({ ticker, size = "md" }: { ticker: string, size?: "sm" | "md" | "lg" }) => {
   const [errorCount, setErrorCount] = useState(0);
-  
-  // PROTEÇÃO CONTRA CRASH: Se ticker for null/undefined, retorna placeholder seguro
-  if (!ticker || typeof ticker !== 'string') {
-    return <div className="w-10 h-10 bg-gray-100 rounded-lg" />;
-  }
+  if (!ticker || typeof ticker !== 'string') return <div className="w-10 h-10 bg-gray-100 rounded-lg" />;
 
   const sources = [
     `https://raw.githubusercontent.com/thecapybara/br-logos/main/logos/${ticker.toUpperCase()}.png`,
@@ -86,7 +82,7 @@ export default function App() {
   const [isCustomStrategyOpen, setIsCustomStrategyOpen] = useState(false);
   const [isMethodologyOpen, setIsMethodologyOpen] = useState(false);
 
-  // Inicializa com knownStocks para não ficar vazio no início
+  // Inicializa com knownStocks para não ficar vazio
   const [marketStocks, setMarketStocks] = useState<any[]>(STOCKS_DB);
   const [isLoadingMarket, setIsLoadingMarket] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
@@ -98,19 +94,17 @@ export default function App() {
 
   useEffect(() => {
     MarketService.getEsgScores()
-      .then(map => { 
-        setEsgMap(map); 
-        setIsEsgMapLoaded(true); 
-      })
+      .then(map => { setEsgMap(map); setIsEsgMapLoaded(true); })
       .catch(err => console.error("Erro ESG:", err));
   }, []);
 
-  // --- BUSCA COM DEBOUNCE ---
+  // --- BUSCA (ANTI-CRASH) ---
   useEffect(() => {
     if (activeTab === "market") {
       setSearchError(false);
       
       if (searchTerm.trim() === "") {
+        // Se vazio, usa a lista conhecida (RESTAUROU A LISTA GRANDE)
         setMarketStocks(knownStocks); 
         setIsLoadingMarket(false);
         return;
@@ -120,15 +114,11 @@ export default function App() {
         setIsLoadingMarket(true);
         MarketService.searchStocks(searchTerm)
           .then(data => {
-             // O Service já garante que 'data' é array e tem 'ticker'
-             if (data.length > 0) {
-               setMarketStocks(data);
-             } else {
-               setMarketStocks([]); 
-             }
+             if (data.length > 0) setMarketStocks(data);
+             else setMarketStocks([]); 
           })
           .catch(err => {
-             console.error("Erro na busca:", err);
+             console.error("Erro busca:", err);
              setSearchError(true);
              setMarketStocks([]);
           })
@@ -138,16 +128,19 @@ export default function App() {
     }
   }, [activeTab, searchTerm, knownStocks]);
 
-  // --- CÁLCULO DE NOTA ---
+  // --- CÁLCULO DE NOTA (CORREÇÃO DE MATCH + FOLHA VERDE) ---
+  const getEsgData = (ticker: string) => {
+    if (!ticker) return { score: 50, badges: [] };
+    const cleanTicker = ticker.replace('.SA', '').trim().toUpperCase();
+    // Tenta achar com a chave limpa (WEGE3) ou original
+    return esgMap[cleanTicker] || esgMap[ticker] || { score: 50, badges: [] };
+  };
+
   const calculateLivoScore = (stock: any, assetType: string, esgWeight: number) => {
     if (assetType === 'fixed_income') return 60;
 
-    const rawTicker = stock.ticker || "";
-    const cleanTicker = rawTicker.replace('.SA', '').trim().toUpperCase();
-    
-    // Busca nota no mapa ou usa 50 (Neutro)
-    const esgData = esgMap[cleanTicker] || esgMap[rawTicker];
-    const esgScore = esgData ? esgData.score : 50;
+    const esgData = getEsgData(stock.ticker);
+    const esgScore = esgData.score;
 
     let financialScore = 60; 
     if (stock.change > 0) financialScore = 70;
@@ -209,17 +202,15 @@ export default function App() {
     }).sort((a, b) => b.coherenceScore - a.coherenceScore);
   }, [userProfile, knownStocks, esgMap]);
 
+  // --- LISTA DE MERCADO ---
   const displayedStocks = useMemo(() => {
     const safeStocks = Array.isArray(marketStocks) ? marketStocks : [];
     
     const enriched = safeStocks.map(stock => {
-      const rawTicker = stock.ticker || "";
-      const cleanTicker = rawTicker.replace('.SA', '').trim().toUpperCase();
+      const b3Data = getEsgData(stock.ticker);
       
-      const b3Data = esgMap[cleanTicker] || esgMap[rawTicker] || { score: 50, badges: [] };
-      
-      let displayName = STOCK_NAMES_FIX[cleanTicker] || stock.name || rawTicker;
-      if (displayName.endsWith('.SA')) displayName = displayName.replace('.SA', '');
+      let displayName = STOCK_NAMES_FIX[stock.ticker] || stock.name || stock.ticker;
+      if (displayName && displayName.endsWith('.SA')) displayName = displayName.replace('.SA', '');
       
       const evidence = b3Data.evidence_log || (b3Data.score === 50 ? [{ type: 'BASE', desc: 'Nota Inicial Neutra', val: 50 }] : []);
 
@@ -231,7 +222,8 @@ export default function App() {
         score: b3Data.score 
       };
     });
-    return enriched.filter(stock => !filterEsgOnly || stock.score >= 50);
+    // FILTRO ESG REFORÇADO: Só mostra quem tem nota acima da base (50)
+    return enriched.filter(stock => !filterEsgOnly || stock.score > 55);
   }, [marketStocks, filterEsgOnly, esgMap]);
 
   const handleAddTransaction = (t: Omit<Transaction, "id">, extraStockData?: any) => {
@@ -242,9 +234,7 @@ export default function App() {
     if (extraStockData) {
       setKnownStocks(prev => {
         const exists = prev.find(s => s.ticker === extraStockData.ticker);
-        if (exists) {
-            return prev.map(s => s.ticker === extraStockData.ticker ? { ...s, price: extraStockData.price } : s);
-        }
+        if (exists) return prev;
         return [...prev, {
             ...extraStockData,
             esgScore: extraStockData.esgScore || 50,
@@ -355,13 +345,14 @@ export default function App() {
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-1">
                              <h4 className="font-bold text-gray-900">{stock.ticker}</h4>
-                             {stock.score >= 50 && <Leaf size={12} className="text-emerald-500" fill="currentColor"/>}
+                             {/* CORREÇÃO FOLHA VERDE: SÓ APARECE SE > 55 */}
+                             {stock.score > 55 && <Leaf size={12} className="text-emerald-500" fill="currentColor"/>}
                           </div>
                           <p className="text-xs text-gray-500 truncate">{stock.name}</p>
                         </div>
                         <div className="text-right shrink-0">
                             <div className="font-bold text-gray-900">R$ {stock.price?.toFixed(2)}</div>
-                            <div className={`text-xs font-bold ${stock.score >= 50 ? "text-emerald-600" : "text-gray-400"}`}>{stock.score} pts</div>
+                            <div className={`text-xs font-bold ${stock.score > 55 ? "text-emerald-600" : "text-gray-400"}`}>{stock.score} pts</div>
                         </div>
                     </div>
                  </div>
