@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { ArrowRight, Leaf, TrendingUp, Shield, Heart, Coins } from "lucide-react"; 
+import { ArrowRight, Leaf, TrendingUp, Shield, Coins } from "lucide-react"; 
 import {
   InvestmentGoal,
   RiskProfile,
@@ -24,13 +24,13 @@ export default function Onboarding({ onComplete }: Props) {
 
   const next = () => setStep((s) => s + 1);
 
-  // Função auxiliar para descrever o nível ESG escolhido
+  // TEXTOS ATUALIZADOS PARA O SLIDER
   const getEsgLabel = (value: number) => {
-    if (value <= 0.2) return "Prioridade total em Lucro";
-    if (value <= 0.4) return "Foco maior em Retorno";
-    if (value <= 0.6) return "Equilíbrio entre Lucro e Impacto";
-    if (value <= 0.8) return "Foco maior em Sustentabilidade";
-    return "Prioridade total em Impacto ESG";
+    if (value <= 0.2) return "Foco total em Lucro";
+    if (value <= 0.4) return "Prefiro maior Rentabilidade";
+    if (value <= 0.6) return "Busco equilíbrio (Lucro + Impacto)";
+    if (value <= 0.8) return "Prefiro empresas Sustentáveis";
+    return "Foco total em Impacto ESG";
   };
 
   return (
@@ -42,17 +42,17 @@ export default function Onboarding({ onComplete }: Props) {
             <div
               key={i}
               className={`h-1.5 flex-1 rounded-full ${
-                i <= step ? "bg-emerald-500" : "bg-gray-200"
+                i <= step ? "bg-emerald-600" : "bg-gray-200"
               }`}
             />
           ))}
         </div>
 
-        {/* STEP 1 — MANIFESTO LIVO */}
+        {/* STEP 1 — MANIFESTO LIVO (TEXTO NOVO) */}
         {step === 1 && (
           <div className="space-y-6 animate-in fade-in">
             <div className="flex justify-center mb-4">
-               {/* LOGO DA LIVO NO ONBOARDING */}
+               {/* LOGO DA LIVO */}
                <div className="w-20 h-20 bg-emerald-100 rounded-full flex items-center justify-center text-emerald-600 p-4 overflow-hidden">
                  <img 
                    src="/logo.png" 
@@ -60,33 +60,30 @@ export default function Onboarding({ onComplete }: Props) {
                    className="w-full h-full object-contain"
                    onError={(e) => {
                      e.currentTarget.style.display = 'none';
-                     e.currentTarget.parentElement!.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z"/><path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12"/></svg>';
+                     e.currentTarget.parentElement!.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#236C3F" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z"/><path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12"/></svg>';
                    }}
                  />
                </div>
             </div>
             
             <h1 className="text-3xl font-bold text-gray-900 text-center">
-              Bem vindo(a) a Livo!
+              Bem vindo(a) a Livo
             </h1>
 
             <div className="space-y-4 text-gray-600 leading-relaxed text-center">
               <p>
-               Um guia de bolso para investir com responsabilidade, consciência e tranquilidade.
+               Descubra a nota real da sua carteira e invista com mais inteligência.
               </p>
-              <p>
-                <strong>Não somos um banco nem uma corretora.</strong>
-              </p>
-              <p>
-               Com a Livo, você aprende mais sobre investimentos, monta a sua carteira equilibrada e monitora onde seu dinheiro está aplicado.
+              <p className="text-sm">
+                A <strong>Livo</strong> analisa seus investimentos e calcula uma nota exclusiva baseada no que é importante para você: Lucro, Segurança ou Sustentabilidade.
               </p>
             </div>
 
             <button
               onClick={next}
-              className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-4 rounded-xl flex items-center justify-center gap-2 transition-all"
+              className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-4 rounded-xl flex items-center justify-center gap-2 transition-all shadow-lg shadow-emerald-200"
             >
-              Começar minha jornada <ArrowRight size={18} />
+              Descobrir minha nota <ArrowRight size={18} />
             </button>
           </div>
         )}
@@ -160,7 +157,7 @@ export default function Onboarding({ onComplete }: Props) {
         {step === 4 && (
           <div className="space-y-6 animate-in fade-in">
             <h2 className="text-2xl font-bold text-gray-900">
-              Como você prefere seguir em sua jornada de investimentos?
+              Como você prefere seguir em sua jornada?
             </h2>
 
             <button
@@ -217,11 +214,11 @@ export default function Onboarding({ onComplete }: Props) {
         {step === 5 && (
           <div className="space-y-6 animate-in fade-in">
             <h2 className="text-2xl font-bold text-gray-900">
-              Invista com consciência
+              O que compõe uma Nota 100 pra você?
             </h2>
 
             <p className="text-sm text-gray-600">
-              A Livo te ajuda a equilibrar lucros com responsabilidade social e ambiental.
+              Defina o peso do <strong>Lucro</strong> vs <strong>Impacto</strong> na nota da sua carteira.
             </p>
 
             <div className="bg-white p-6 rounded-2xl space-y-6 border border-gray-200 shadow-sm">
@@ -275,7 +272,7 @@ export default function Onboarding({ onComplete }: Props) {
               }
               className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-4 rounded-xl flex items-center justify-center gap-2 shadow-lg shadow-emerald-200 transition-all"
             >
-              Entrar na Livo <Leaf size={18} />
+              Criar minha carteira <Leaf size={18} />
             </button>
           </div>
         )}
