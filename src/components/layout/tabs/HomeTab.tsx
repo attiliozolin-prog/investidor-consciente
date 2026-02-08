@@ -71,8 +71,8 @@ const STRATEGY_CONTENT = {
 };
 
 const getCoherenceStatus = (score: number) => {
-  if (score >= 80) return { color: "bg-emerald-500", text: "Excelente", textClass: "text-emerald-700" };
-  if (score >= 50) return { color: "bg-yellow-500", text: "Moderado", textClass: "text-yellow-700" };
+  if (score >= 80) return { color: "bg-emerald-500", text: "Parabéns! Sua carteira é majoritariamente composta por empresas responsáveis.", textClass: "text-emerald-700" };
+  if (score >= 50) return { color: "bg-yellow-500", text: "Pode melhorar. Procure empresas mais responsáveis na guia Explorar.", textClass: "text-yellow-700" };
   return { color: "bg-red-500", text: "Precisa de Atenção", textClass: "text-red-700" };
 };
 
@@ -291,7 +291,7 @@ const HomeTab: React.FC<any> = ({
               </h3>
               
               <div className="flex items-center gap-2 mt-1">
-                <p className="text-xs text-gray-500">Alinhamento com seu perfil</p>
+                <p className="text-xs text-gray-500">Entendenda sua Nota Livo</p>
                 <button 
                    onClick={() => setIsLivoInfoOpen(!isLivoInfoOpen)}
                    className="text-gray-400 hover:text-emerald-600 transition-colors"
@@ -316,7 +316,7 @@ const HomeTab: React.FC<any> = ({
                   <X size={16} />
                 </button>
                 <p className="text-sm text-emerald-900 leading-relaxed font-medium">
-                  Este índice revela a <strong>integridade média</strong> da sua carteira. Calculamos uma média ponderada cruzando a <strong>Nota Livo</strong> de cada ativo (Baseada em selos de sustentabilidade e histórico de conduta) com o <strong>volume financeiro</strong> que você tem alocado neles. Quanto maior a nota, mais responsável é a sua exposição.
+                  Este índice revela o nível de responsabilidade socioal e ambiental da sua carteira de investimentos. Calculamos uma média ponderada cruzando a <strong>Nota Livo</strong> de cada ativo de sua carteira (baseada em selos de sustentabilidade e histórico de conduta) com o <strong>volume financeiro</strong> que você tem alocado neles. Quanto maior a nota, mais responsável é a sua exposição.
                 </p>
              </div>
           )}
