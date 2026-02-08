@@ -22,46 +22,40 @@ import { Transaction, Holding, UserProfile } from "./types";
 import { STOCKS_DB } from "./data/stocks";
 import { MarketService, EsgScoreData } from "./services/market";
 
-// --- DICIONÁRIO DE CORREÇÃO DE NOMES E TICKERS ---
-const STOCK_FIXES: Record<string, { name: string, tickerAlias?: string }> = {
-  // Correção explícita para o erro comum de WEG
-  "WEG3": { name: "WEG S.A. (Use WEGE3)", tickerAlias: "WEGE3" }, 
-  "WEGE3": { name: "WEG S.A." },
-  
-  "VALE3": { name: "Vale S.A." },
-  "PETR4": { name: "Petrobras PN" }, "PETR3": { name: "Petrobras ON" },
-  "ITUB4": { name: "Itaú Unibanco" }, "BBDC4": { name: "Bradesco PN" },
-  "BBAS3": { name: "Banco do Brasil" }, "ABEV3": { name: "Ambev" },
-  "MGLU3": { name: "Magazine Luiza" }, "JBSS3": { name: "JBS" },
-  "SUZB3": { name: "Suzano" }, "GGBR4": { name: "Gerdau PN" },
-  "RENT3": { name: "Localiza" }, "LREN3": { name: "Lojas Renner" },
-  "PRIO3": { name: "Prio (PetroRio)" }, "HAPV3": { name: "Hapvida" },
-  "RDOR3": { name: "Rede D'Or" }, "RAIL3": { name: "Rumo Logística" },
-  "ELET3": { name: "Eletrobras ON" }, "B3SA3": { name: "B3 S.A." },
-  "BPAC11": { name: "BTG Pactual" }, "SANB11": { name: "Santander Brasil" },
-  "VIVT3": { name: "Vivo Telefônica" }, "TIMS3": { name: "TIM Brasil" },
-  "CSAN3": { name: "Cosan" }, "AMER3": { name: "Americanas" },
-  "AZUL4": { name: "Azul Linhas Aéreas" }, "GOLL4": { name: "Gol Linhas Aéreas" },
-  "CASH3": { name: "Méliuz" }
+// --- DICIONÁRIO MESTRE DE NOMES B3 ---
+const STOCK_NAMES_FIX: Record<string, string> = {
+  "VALE3": "Vale S.A.", "PETR4": "Petrobras PN", "PETR3": "Petrobras ON",
+  "ITUB4": "Itaú Unibanco", "BBDC4": "Bradesco PN", "BBDC3": "Bradesco ON",
+  "BBAS3": "Banco do Brasil", "WEGE3": "WEG S.A.", "ABEV3": "Ambev",
+  "MGLU3": "Magazine Luiza", "JBSS3": "JBS", "SUZB3": "Suzano",
+  "GGBR4": "Gerdau PN", "RENT3": "Localiza", "LREN3": "Lojas Renner",
+  "PRIO3": "Prio (PetroRio)", "HAPV3": "Hapvida", "RDOR3": "Rede D'Or",
+  "RAIL3": "Rumo Logística", "ELET3": "Eletrobras ON", "ELET6": "Eletrobras PNB",
+  "B3SA3": "B3 S.A.", "BPAC11": "BTG Pactual", "SANB11": "Santander Brasil",
+  "VIVT3": "Vivo Telefônica", "TIMS3": "TIM Brasil", "CSAN3": "Cosan",
+  "AMER3": "Americanas", "VIIA3": "Grupo Casas Bahia", "AZUL4": "Azul Linhas Aéreas",
+  "GOLL4": "Gol Linhas Aéreas", "OIBR3": "Oi S.A.", "CASH3": "Méliuz"
 };
 
-// Função auxiliar para normalizar Ticker (Resolve WEG3 -> WEGE3)
+// --- DICIONÁRIO DE CORREÇÃO DE TICKERS ---
+const STOCK_FIXES: Record<string, { name: string, tickerAlias?: string }> = {
+  "WEG3": { name: "WEG S.A. (Use WEGE3)", tickerAlias: "WEGE3" }, 
+  "WEGE3": { name: "WEG S.A." }
+};
+
+// Normalizador de Ticker
 const normalizeTicker = (rawTicker: string) => {
   if (!rawTicker) return "";
   const clean = rawTicker.replace('.SA', '').trim().toUpperCase();
-  // Se tiver um alias definido (ex: WEG3 -> WEGE3), usa o alias
   return STOCK_FIXES[clean]?.tickerAlias || clean;
 };
 
 // --- COMPONENTE DE LOGO ---
 const StockLogo = ({ ticker, size = "md" }: { ticker: string, size?: "sm" | "md" | "lg" }) => {
   const [errorCount, setErrorCount] = useState(0);
-  
   if (!ticker) return <div className="w-10 h-10 bg-gray-100 rounded-lg" />;
   
-  // Normaliza para buscar o logo certo (ex: logo da WEGE3 mesmo se vier WEG3)
   const logoTicker = normalizeTicker(ticker);
-
   const sources = [
     `https://raw.githubusercontent.com/thecapybara/br-logos/main/logos/${logoTicker}.png`,
     `https://raw.githubusercontent.com/lbcosta/b3-logos/main/png/${logoTicker}.png`
@@ -86,8 +80,9 @@ export default function App() {
   const [activeTab, setActiveTab] = useState("home");
   const [showValues, setShowValues] = useState(true);
 
+  // Perfil simplificado (Sem necessidade de esgImportance no fluxo)
   const [userProfile, setUserProfile] = useState<UserProfile>({
-    name: "", goal: null, esgImportance: 0.5, riskProfile: null, isOnboardingComplete: false,
+    name: "", goal: null, esgImportance: 1, riskProfile: null, isOnboardingComplete: false,
   });
 
   const [transactions, setTransactions] = useState<Transaction[]>(() => {
@@ -102,7 +97,6 @@ export default function App() {
   const [isCustomStrategyOpen, setIsCustomStrategyOpen] = useState(false);
   const [isMethodologyOpen, setIsMethodologyOpen] = useState(false);
 
-  // Inicializa com knownStocks para não ficar vazio
   const [marketStocks, setMarketStocks] = useState<any[]>(STOCKS_DB);
   const [isLoadingMarket, setIsLoadingMarket] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
@@ -118,17 +112,14 @@ export default function App() {
       .catch(err => console.error("Erro ESG:", err));
   }, []);
 
-  // --- BUSCA BLINDADA ---
   useEffect(() => {
     if (activeTab === "market") {
       setSearchError(false);
-      
       if (searchTerm.trim() === "") {
         setMarketStocks(knownStocks); 
         setIsLoadingMarket(false);
         return;
       }
-
       const delayDebounceFn = setTimeout(() => {
         setIsLoadingMarket(true);
         MarketService.searchStocks(searchTerm)
@@ -147,25 +138,20 @@ export default function App() {
     }
   }, [activeTab, searchTerm, knownStocks]);
 
-  // --- FUNÇÃO CENTRAL DE DADOS ESG ---
   const getEsgData = (rawTicker: string) => {
     const realTicker = normalizeTicker(rawTicker);
-    // Tenta achar com a chave oficial (WEGE3)
     return esgMap[realTicker] || { score: 50, badges: [] };
   };
 
-  const calculateLivoScore = (stock: any, assetType: string, esgWeight: number) => {
+  // --- CÁLCULO PADRONIZADO (SEM PESO PERSONALIZADO) ---
+  const calculateLivoScore = (stock: any, assetType: string) => {
+    // Renda Fixa: Porto seguro neutro (60)
     if (assetType === 'fixed_income') return 60;
 
+    // Ações/FIIs: Usa 100% da nota oficial do Backend
+    // (Base 50 + Bônus - Penalidades)
     const esgData = getEsgData(stock.ticker);
-    const esgScore = esgData.score;
-
-    let financialScore = 60; 
-    if (stock.change > 0) financialScore = 70;
-    if (stock.change < 0) financialScore = 50;
-
-    const score = (esgScore * esgWeight) + (financialScore * (1 - esgWeight));
-    return Math.round(score);
+    return esgData.score;
   };
 
   const holdings = useMemo(() => {
@@ -189,10 +175,10 @@ export default function App() {
         const currentPrice = stock ? stock.price : (value.totalCost / (value.qty || 1));
         const totalValue = isFixedIncome ? value.totalCost : (value.qty * currentPrice);
 
+        // Score Unificado
         const coherenceScore = calculateLivoScore(
           stock || { ticker, change: 0 }, 
-          isFixedIncome ? 'fixed_income' : 'stock', 
-          userProfile.esgImportance
+          isFixedIncome ? 'fixed_income' : 'stock'
         );
 
         result.push({
@@ -211,16 +197,15 @@ export default function App() {
       }
     });
     return result;
-  }, [transactions, knownStocks, userProfile.esgImportance, esgMap]);
+  }, [transactions, knownStocks, esgMap]);
 
   const rankedStocks = useMemo(() => {
     return knownStocks.map((stock) => {
-      const score = calculateLivoScore(stock, stock.assetType, userProfile.esgImportance);
+      const score = calculateLivoScore(stock, stock.assetType);
       return { ...stock, coherenceScore: score };
     }).sort((a, b) => b.coherenceScore - a.coherenceScore);
-  }, [userProfile, knownStocks, esgMap]);
+  }, [knownStocks, esgMap]);
 
-  // --- LISTA DE MERCADO (COM NORMALIZAÇÃO DE WEG3) ---
   const displayedStocks = useMemo(() => {
     const safeStocks = Array.isArray(marketStocks) ? marketStocks : [];
     
@@ -229,6 +214,7 @@ export default function App() {
       
       const cleanTicker = stock.ticker.replace('.SA', '').trim().toUpperCase();
       let displayName = STOCK_FIXES[cleanTicker]?.name || stock.name || stock.ticker;
+      if (displayName && displayName.endsWith('.SA')) displayName = displayName.replace('.SA', '');
       
       const evidence = b3Data.evidence_log || (b3Data.score === 50 ? [{ type: 'BASE', desc: 'Nota Inicial Neutra', val: 50 }] : []);
 
@@ -240,10 +226,11 @@ export default function App() {
         score: b3Data.score 
       };
     });
-    // Filtro ESG > 55 (Só Destaques Reais)
     return enriched.filter(stock => !filterEsgOnly || stock.score > 55);
   }, [marketStocks, filterEsgOnly, esgMap]);
 
+  // (Funções de Modal e JSX mantidos iguais...)
+  // ... (handleAddTransaction, handleDeleteAsset, openBuyModal, etc.)
   const handleAddTransaction = (t: Omit<Transaction, "id">, extraStockData?: any) => {
     const updated = [...transactions, { ...t, id: Math.random().toString(36).substr(2, 9) }];
     setTransactions(updated);
@@ -280,19 +267,10 @@ export default function App() {
 
   return (
     <div className="max-w-5xl mx-auto bg-[#F9FAFB] min-h-screen relative shadow-2xl border-x border-gray-200">
-      
       <header className="px-6 pt-12 pb-4 flex justify-between items-center bg-white sticky top-0 z-20 border-b border-gray-100">
         <div className="flex items-center gap-3">
           <div className="h-10 w-auto max-w-[120px] flex items-center justify-start overflow-hidden">
-             <img 
-               src="/logo.png" 
-               alt="Livo Logo" 
-               className="h-full w-auto object-contain"
-               onError={(e) => {
-                 e.currentTarget.style.display = 'none';
-                 e.currentTarget.parentElement!.innerHTML = `<div class="w-10 h-10 bg-emerald-100 rounded-full flex items-center justify-center text-emerald-600"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z"/><path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12"/></svg></div>`;
-               }}
-             />
+             <img src="/logo.png" alt="Livo Logo" className="h-full w-auto object-contain" onError={(e) => { e.currentTarget.style.display = 'none'; e.currentTarget.parentElement!.innerHTML = `<div class="w-10 h-10 bg-emerald-100 rounded-full flex items-center justify-center text-emerald-600"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z"/><path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12"/></svg></div>`; }} />
           </div>
           <div>
             <h1 className="text-xl font-bold text-gray-900 tracking-tight leading-none hidden">Livo</h1>
@@ -301,15 +279,13 @@ export default function App() {
             </p>
           </div>
         </div>
-        <button onClick={() => { if (window.confirm("Resetar TUDO?")) { localStorage.clear(); window.location.reload(); } }} className="text-[10px] font-bold text-red-500 bg-red-50 px-3 py-1.5 rounded-full hover:bg-red-100 transition-colors">
-          Sair / Resetar
-        </button>
+        <button onClick={() => { if (window.confirm("Resetar TUDO?")) { localStorage.clear(); window.location.reload(); } }} className="text-[10px] font-bold text-red-500 bg-red-50 px-3 py-1.5 rounded-full hover:bg-red-100 transition-colors">Sair / Resetar</button>
       </header>
 
       <main className="p-6">
         {activeTab === "home" && <HomeTab userProfile={userProfile} transactions={transactions} onAddTransaction={openBuyModal} showValues={showValues} onToggleValues={() => setShowValues(!showValues)} holdings={holdings} rankedStocks={rankedStocks} />}
         {activeTab === "portfolio" && <PortfolioDashboard userProfile={userProfile} transactions={transactions} onAddTransaction={openBuyModal} onSellTransaction={openSellModal} onRetakeOnboarding={handleRetakeOnboarding} onOpenCustomStrategy={() => setIsCustomStrategyOpen(true)} onDeleteAsset={handleDeleteAsset} onDeleteTransaction={() => {}} rankedStocks={rankedStocks} showValues={showValues} />}
-
+        
         {activeTab === "market" && (
           <div className="space-y-4 pb-32 animate-in fade-in">
             <div className="sticky top-20 z-10 space-y-2">
@@ -337,23 +313,15 @@ export default function App() {
 
             <div className="space-y-3">
               {!isLoadingMarket && searchError && (
-                 <div className="flex items-center gap-2 p-3 bg-red-50 text-red-600 rounded-xl text-sm justify-center">
-                   <AlertCircle size={16} /> Falha na conexão. Tente novamente.
-                 </div>
+                 <div className="flex items-center gap-2 p-3 bg-red-50 text-red-600 rounded-xl text-sm justify-center"><AlertCircle size={16} /> Falha na conexão. Tente novamente.</div>
               )}
-
               {displayedStocks.length === 0 && !isLoadingMarket && !searchError && (
-                <div className="text-center py-10">
-                   <p className="text-gray-400 mb-2">Nenhum ativo encontrado.</p>
-                </div>
+                <div className="text-center py-10"><p className="text-gray-400 mb-2">Nenhum ativo encontrado.</p></div>
               )}
-
               {displayedStocks.map((stock) => (
                  <div key={stock.ticker} onClick={() => {
                       const fullStockData = { ...stock, coherenceScore: stock.score, tags: stock.badges };
-                      if (!knownStocks.find(s => s.ticker === stock.ticker)) {
-                          setKnownStocks(prev => [...prev, fullStockData]);
-                      }
+                      if (!knownStocks.find(s => s.ticker === stock.ticker)) { setKnownStocks(prev => [...prev, fullStockData]); }
                       setSelectedStock(fullStockData);
                    }}
                    className="bg-white p-4 rounded-2xl border border-gray-100 flex justify-between items-center cursor-pointer hover:border-emerald-200 hover:shadow-md transition-all"
@@ -363,7 +331,6 @@ export default function App() {
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-1">
                              <h4 className="font-bold text-gray-900">{stock.ticker}</h4>
-                             {/* FOLHA VERDE SOMENTE SE NOTA > 55 */}
                              {stock.score > 55 && <Leaf size={12} className="text-emerald-500" fill="currentColor"/>}
                           </div>
                           <p className="text-xs text-gray-500 truncate">{stock.name}</p>
