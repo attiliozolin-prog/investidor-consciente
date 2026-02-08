@@ -22,29 +22,49 @@ import { Transaction, Holding, UserProfile } from "./types";
 import { STOCKS_DB } from "./data/stocks";
 import { MarketService, EsgScoreData } from "./services/market";
 
-// --- DICIONÁRIO MESTRE DE NOMES B3 ---
-const STOCK_NAMES_FIX: Record<string, string> = {
-  "VALE3": "Vale S.A.", "PETR4": "Petrobras PN", "PETR3": "Petrobras ON",
-  "ITUB4": "Itaú Unibanco", "BBDC4": "Bradesco PN", "BBDC3": "Bradesco ON",
-  "BBAS3": "Banco do Brasil", "WEGE3": "WEG S.A.", "ABEV3": "Ambev",
-  "MGLU3": "Magazine Luiza", "JBSS3": "JBS", "SUZB3": "Suzano",
-  "GGBR4": "Gerdau PN", "RENT3": "Localiza", "LREN3": "Lojas Renner",
-  "PRIO3": "Prio (PetroRio)", "HAPV3": "Hapvida", "RDOR3": "Rede D'Or",
-  "RAIL3": "Rumo Logística", "ELET3": "Eletrobras ON", "ELET6": "Eletrobras PNB",
-  "B3SA3": "B3 S.A.", "BPAC11": "BTG Pactual", "SANB11": "Santander Brasil",
-  "VIVT3": "Vivo Telefônica", "TIMS3": "TIM Brasil", "CSAN3": "Cosan",
-  "AMER3": "Americanas", "VIIA3": "Grupo Casas Bahia", "AZUL4": "Azul Linhas Aéreas",
-  "GOLL4": "Gol Linhas Aéreas", "OIBR3": "Oi S.A.", "CASH3": "Méliuz"
+// --- DICIONÁRIO DE CORREÇÃO DE NOMES E TICKERS ---
+const STOCK_FIXES: Record<string, { name: string, tickerAlias?: string }> = {
+  // Correção explícita para o erro comum de WEG
+  "WEG3": { name: "WEG S.A. (Use WEGE3)", tickerAlias: "WEGE3" }, 
+  "WEGE3": { name: "WEG S.A." },
+  
+  "VALE3": { name: "Vale S.A." },
+  "PETR4": { name: "Petrobras PN" }, "PETR3": { name: "Petrobras ON" },
+  "ITUB4": { name: "Itaú Unibanco" }, "BBDC4": { name: "Bradesco PN" },
+  "BBAS3": { name: "Banco do Brasil" }, "ABEV3": { name: "Ambev" },
+  "MGLU3": { name: "Magazine Luiza" }, "JBSS3": { name: "JBS" },
+  "SUZB3": { name: "Suzano" }, "GGBR4": { name: "Gerdau PN" },
+  "RENT3": { name: "Localiza" }, "LREN3": { name: "Lojas Renner" },
+  "PRIO3": { name: "Prio (PetroRio)" }, "HAPV3": { name: "Hapvida" },
+  "RDOR3": { name: "Rede D'Or" }, "RAIL3": { name: "Rumo Logística" },
+  "ELET3": { name: "Eletrobras ON" }, "B3SA3": { name: "B3 S.A." },
+  "BPAC11": { name: "BTG Pactual" }, "SANB11": { name: "Santander Brasil" },
+  "VIVT3": { name: "Vivo Telefônica" }, "TIMS3": { name: "TIM Brasil" },
+  "CSAN3": { name: "Cosan" }, "AMER3": { name: "Americanas" },
+  "AZUL4": { name: "Azul Linhas Aéreas" }, "GOLL4": { name: "Gol Linhas Aéreas" },
+  "CASH3": { name: "Méliuz" }
+};
+
+// Função auxiliar para normalizar Ticker (Resolve WEG3 -> WEGE3)
+const normalizeTicker = (rawTicker: string) => {
+  if (!rawTicker) return "";
+  const clean = rawTicker.replace('.SA', '').trim().toUpperCase();
+  // Se tiver um alias definido (ex: WEG3 -> WEGE3), usa o alias
+  return STOCK_FIXES[clean]?.tickerAlias || clean;
 };
 
 // --- COMPONENTE DE LOGO ---
 const StockLogo = ({ ticker, size = "md" }: { ticker: string, size?: "sm" | "md" | "lg" }) => {
   const [errorCount, setErrorCount] = useState(0);
-  if (!ticker || typeof ticker !== 'string') return <div className="w-10 h-10 bg-gray-100 rounded-lg" />;
+  
+  if (!ticker) return <div className="w-10 h-10 bg-gray-100 rounded-lg" />;
+  
+  // Normaliza para buscar o logo certo (ex: logo da WEGE3 mesmo se vier WEG3)
+  const logoTicker = normalizeTicker(ticker);
 
   const sources = [
-    `https://raw.githubusercontent.com/thecapybara/br-logos/main/logos/${ticker.toUpperCase()}.png`,
-    `https://raw.githubusercontent.com/lbcosta/b3-logos/main/png/${ticker.toUpperCase()}.png`
+    `https://raw.githubusercontent.com/thecapybara/br-logos/main/logos/${logoTicker}.png`,
+    `https://raw.githubusercontent.com/lbcosta/b3-logos/main/png/${logoTicker}.png`
   ];
   const sizeClasses = { sm: "w-8 h-8 text-[10px]", md: "w-10 h-10 text-xs", lg: "w-14 h-14 text-sm" };
 
@@ -98,13 +118,12 @@ export default function App() {
       .catch(err => console.error("Erro ESG:", err));
   }, []);
 
-  // --- BUSCA (ANTI-CRASH) ---
+  // --- BUSCA BLINDADA ---
   useEffect(() => {
     if (activeTab === "market") {
       setSearchError(false);
       
       if (searchTerm.trim() === "") {
-        // Se vazio, usa a lista conhecida (RESTAUROU A LISTA GRANDE)
         setMarketStocks(knownStocks); 
         setIsLoadingMarket(false);
         return;
@@ -128,12 +147,11 @@ export default function App() {
     }
   }, [activeTab, searchTerm, knownStocks]);
 
-  // --- CÁLCULO DE NOTA (CORREÇÃO DE MATCH + FOLHA VERDE) ---
-  const getEsgData = (ticker: string) => {
-    if (!ticker) return { score: 50, badges: [] };
-    const cleanTicker = ticker.replace('.SA', '').trim().toUpperCase();
-    // Tenta achar com a chave limpa (WEGE3) ou original
-    return esgMap[cleanTicker] || esgMap[ticker] || { score: 50, badges: [] };
+  // --- FUNÇÃO CENTRAL DE DADOS ESG ---
+  const getEsgData = (rawTicker: string) => {
+    const realTicker = normalizeTicker(rawTicker);
+    // Tenta achar com a chave oficial (WEGE3)
+    return esgMap[realTicker] || { score: 50, badges: [] };
   };
 
   const calculateLivoScore = (stock: any, assetType: string, esgWeight: number) => {
@@ -202,15 +220,15 @@ export default function App() {
     }).sort((a, b) => b.coherenceScore - a.coherenceScore);
   }, [userProfile, knownStocks, esgMap]);
 
-  // --- LISTA DE MERCADO ---
+  // --- LISTA DE MERCADO (COM NORMALIZAÇÃO DE WEG3) ---
   const displayedStocks = useMemo(() => {
     const safeStocks = Array.isArray(marketStocks) ? marketStocks : [];
     
     const enriched = safeStocks.map(stock => {
       const b3Data = getEsgData(stock.ticker);
       
-      let displayName = STOCK_NAMES_FIX[stock.ticker] || stock.name || stock.ticker;
-      if (displayName && displayName.endsWith('.SA')) displayName = displayName.replace('.SA', '');
+      const cleanTicker = stock.ticker.replace('.SA', '').trim().toUpperCase();
+      let displayName = STOCK_FIXES[cleanTicker]?.name || stock.name || stock.ticker;
       
       const evidence = b3Data.evidence_log || (b3Data.score === 50 ? [{ type: 'BASE', desc: 'Nota Inicial Neutra', val: 50 }] : []);
 
@@ -222,7 +240,7 @@ export default function App() {
         score: b3Data.score 
       };
     });
-    // FILTRO ESG REFORÇADO: Só mostra quem tem nota acima da base (50)
+    // Filtro ESG > 55 (Só Destaques Reais)
     return enriched.filter(stock => !filterEsgOnly || stock.score > 55);
   }, [marketStocks, filterEsgOnly, esgMap]);
 
@@ -345,7 +363,7 @@ export default function App() {
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-1">
                              <h4 className="font-bold text-gray-900">{stock.ticker}</h4>
-                             {/* CORREÇÃO FOLHA VERDE: SÓ APARECE SE > 55 */}
+                             {/* FOLHA VERDE SOMENTE SE NOTA > 55 */}
                              {stock.score > 55 && <Leaf size={12} className="text-emerald-500" fill="currentColor"/>}
                           </div>
                           <p className="text-xs text-gray-500 truncate">{stock.name}</p>
