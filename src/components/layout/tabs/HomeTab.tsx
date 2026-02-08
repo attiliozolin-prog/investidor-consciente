@@ -316,7 +316,7 @@ const HomeTab: React.FC<any> = ({
                   <X size={16} />
                 </button>
                 <p className="text-sm text-emerald-900 leading-relaxed font-medium">
-                  Este índice revela o nível de responsabilidade socioal e ambiental da sua carteira de investimentos. Calculamos uma média ponderada cruzando a <strong>Nota Livo</strong> de cada ativo de sua carteira (baseada em selos de sustentabilidade e histórico de conduta) com o <strong>volume financeiro</strong> que você tem alocado neles. Quanto maior a nota, mais responsável é a sua exposição.
+                  Este índice revela o nível de responsabilidade social e ambiental da sua carteira de investimentos. Calculamos uma média ponderada cruzando a <strong>Nota Livo</strong> de cada ativo de sua carteira (baseada em selos de sustentabilidade e histórico de conduta) com o <strong>volume financeiro</strong> que você tem alocado neles. Quanto maior a nota, mais responsável é a sua exposição.
                 </p>
              </div>
           )}
