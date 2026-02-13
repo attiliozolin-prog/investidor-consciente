@@ -29,10 +29,10 @@ module.exports = async (req, res) => {
 
     if (search) {
       // Busca específica (ex: "Sanepar")
-      url = `https://brapi.dev/api/quote/list?search=${search}&limit=20${tokenParam}`;
+      url = `https://brapi.dev/api/quote/list?search=${search}&limit=30${tokenParam}`;
     } else {
-      // Home: Top 100 ações por volume
-      url = `https://brapi.dev/api/quote/list?sortBy=volume&sortOrder=desc&limit=100${tokenParam}`;
+      // Home: Top 50 ações mais transacionadas por volume
+      url = `https://brapi.dev/api/quote/list?sortBy=volume&sortOrder=desc&limit=50${tokenParam}`;
     }
 
     const response = await fetch(url);
