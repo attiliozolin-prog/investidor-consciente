@@ -2,8 +2,18 @@
 // Motor de Scoring ESG Livo v2.1 (Com Dossiê de Penalidades Real)
 
 module.exports = async (req, res) => {
+  // CORS Restrito (apenas domínios permitidos)
+  const allowedOrigins = [
+    'https://livo-beta.vercel.app',
+    'http://localhost:3000',
+    'http://localhost:5173'
+  ];
+  const origin = req.headers.origin || '';
+  if (allowedOrigins.includes(origin)) {
+    res.setHeader('Access-Control-Allow-Origin', origin);
+  }
+
   res.setHeader('Cache-Control', 's-maxage=86400, stale-while-revalidate=43200');
-  res.setHeader('Access-Control-Allow-Origin', '*');
 
   // --- 1. BASE DE DADOS POSITIVA (SELOS B3) ---
   const B3_DATA = {
@@ -107,9 +117,9 @@ module.exports = async (req, res) => {
       };
     });
 
-    return res.status(200).json({ 
+    return res.status(200).json({
       source: "Livo Hybrid Engine v2.1 (Real Data)",
-      data: scores 
+      data: scores
     });
 
   } catch (error) {

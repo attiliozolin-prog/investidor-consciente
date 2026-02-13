@@ -2,9 +2,19 @@
 // VERSÃO: LISTÃO ROBUSTO (Com Autenticação Brapi)
 
 module.exports = async (req, res) => {
+  // CORS Restrito (apenas domínios permitidos)
+  const allowedOrigins = [
+    'https://livo-beta.vercel.app',
+    'http://localhost:3000',
+    'http://localhost:5173'
+  ];
+  const origin = req.headers.origin || '';
+  if (allowedOrigins.includes(origin)) {
+    res.setHeader('Access-Control-Allow-Origin', origin);
+  }
+
   // Cache curto (30s) para manter preço atualizado
   res.setHeader('Cache-Control', 's-maxage=30, stale-while-revalidate=30');
-  res.setHeader('Access-Control-Allow-Origin', '*');
 
   const { search } = req.query;
 
@@ -13,7 +23,7 @@ module.exports = async (req, res) => {
 
   try {
     let url = '';
-    
+
     // Monta a Query String com o token (se existir)
     const tokenParam = token ? `&token=${token}` : '';
 
@@ -26,7 +36,7 @@ module.exports = async (req, res) => {
     }
 
     const response = await fetch(url);
-    
+
     if (!response.ok) {
       // Se der erro de token (401), avisa no log
       if (response.status === 401) {
@@ -48,7 +58,7 @@ module.exports = async (req, res) => {
       return {
         ticker: item.stock,
         name: finalName,
-        price: item.close || item.price, 
+        price: item.close || item.price,
         change: item.change || item.changePercent || 0,
         logo: item.logo,
         sector: item.sector || "Ações",

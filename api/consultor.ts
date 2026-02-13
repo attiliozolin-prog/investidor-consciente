@@ -4,7 +4,16 @@ export default async function handler(
   req: VercelRequest,
   res: VercelResponse
 ) {
-  res.setHeader('Access-Control-Allow-Origin', '*');
+  // CORS Restrito (apenas domínios permitidos)
+  const allowedOrigins = [
+    'https://livo-beta.vercel.app',
+    'http://localhost:3000',
+    'http://localhost:5173'
+  ];
+  const origin = req.headers.origin || '';
+  if (allowedOrigins.includes(origin)) {
+    res.setHeader('Access-Control-Allow-Origin', origin);
+  }
   res.setHeader('Access-Control-Allow-Methods', 'POST,OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
@@ -12,11 +21,33 @@ export default async function handler(
     return res.status(200).end();
   }
 
+  // Apenas POST é permitido
+  if (req.method !== 'POST') {
+    return res.status(405).json({ error: 'Método não permitido' });
+  }
+
   try {
     const apiKey = process.env.OPENAI_API_KEY;
     if (!apiKey) return res.status(500).json({ error: 'Chave API ausente' });
 
     const { carteira } = req.body || {};
+
+    // VALIDAÇÃO DE SEGURANÇA
+    // 1. Verificar se carteira existe
+    if (!carteira) {
+      return res.status(400).json({ error: 'Carteira não fornecida' });
+    }
+
+    // 2. Limitar tamanho do payload (prevenir DoS)
+    const payloadSize = JSON.stringify(carteira).length;
+    if (payloadSize > 100000) { // 100KB max
+      return res.status(413).json({ error: 'Payload muito grande' });
+    }
+
+    // 3. Validar estrutura básica (deve ser array ou objeto)
+    if (typeof carteira !== 'object') {
+      return res.status(400).json({ error: 'Formato de carteira inválido' });
+    }
 
     const response = await fetch(
       'https://api.openai.com/v1/chat/completions',
